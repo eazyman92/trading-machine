@@ -1,0 +1,8 @@
+case,paying_users,active_free_users,gross_monthly_subscription_revenue,direct_service_cost,direct_cost_per_payer,service_contribution,engineering_admin_allowance,acquisition_budget,modeled_operating_balance_before_tax,all_in_modeled_cost
+Base assumptions,1000,3000,39000.0,12450.0,12.45,26550.0,10000.0,3000.0,13550.0,25450.0
+AI calls 5x: 300 per payer,1000,3000,39000.0,19650.0,19.65,19350.0,10000.0,3000.0,6350.0,32650.0
+Market data $10 per payer,1000,3000,39000.0,19450.0,19.45,19550.0,10000.0,3000.0,6550.0,32450.0
+Market data $25 per payer,1000,3000,39000.0,34450.0,34.45,4550.0,10000.0,3000.0,-8450.0,47450.0
+Acquisition cost $100,1000,3000,39000.0,12450.0,12.45,26550.0,10000.0,10000.0,6550.0,32450.0
+Average subscription $29,1000,3000,29000,11950.0,11.95,17050.0,10000.0,3000.0,4050.0,24950.0
+"Combined: 5x AI, $25 data, $100 CAC",1000,3000,39000.0,41650.00000000001,41.650000000000006,-2650.0000000000073,10000.0,10000.0,-22650.000000000007,61650.00000000001

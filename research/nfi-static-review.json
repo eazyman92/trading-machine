@@ -1,0 +1,78 @@
+{
+  "inspection": "Static AST inspection only; no upstream code executed or backtested",
+  "strategy": "NostalgiaForInfinityX8",
+  "declared_version": "v18.0.198",
+  "source_lines": 65155,
+  "fields": {
+    "stoploss": {
+      "value": -0.99,
+      "line": 75
+    },
+    "use_custom_stoploss": {
+      "value": false,
+      "line": 83
+    },
+    "stoploss_on_exchange": {
+      "value": false,
+      "line": 84
+    },
+    "timeframe": {
+      "value": "5m",
+      "line": 87
+    },
+    "info_timeframes": {
+      "value": [
+        "15m",
+        "1h",
+        "4h",
+        "1d"
+      ],
+      "line": 88
+    },
+    "btc_info_timeframes": {
+      "value": [
+        "4h"
+      ],
+      "line": 93
+    },
+    "process_only_new_candles": {
+      "value": true,
+      "line": 111
+    },
+    "startup_candle_count": {
+      "value": 800,
+      "line": 119
+    },
+    "position_adjustment_enable": {
+      "value": true,
+      "line": 301
+    }
+  },
+  "method_count": 141,
+  "relevant_methods": [
+    {
+      "name": "custom_exit",
+      "line": 1950
+    },
+    {
+      "name": "custom_stake_amount",
+      "line": 2512
+    },
+    {
+      "name": "adjust_trade_position",
+      "line": 2750
+    },
+    {
+      "name": "populate_indicators",
+      "line": 4889
+    },
+    {
+      "name": "confirm_trade_entry",
+      "line": 5417
+    },
+    {
+      "name": "populate_entry_trend",
+      "line": 5886
+    }
+  ]
+}

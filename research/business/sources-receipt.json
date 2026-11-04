@@ -1,0 +1,258 @@
+{
+  "schemaVersion": 1,
+  "items": [
+    {
+      "id": "scale-economics",
+      "title": "Illustrative monthly cost and revenue at different user counts",
+      "assumptions": [
+        "Average monthly subscription revenue is assumed to be $39 per paying user, not a tested price.",
+        "All costs except published vendor unit prices are workload and budget assumptions, not quotes or measured capacity.",
+        "Market data is budgeted at $3 per payer without a commercial license quote; fees may be materially higher.",
+        "Operating balance subtracts modeled direct costs, engineering/admin allowance, and acquisition budget, but excludes tax, upfront build/security/legal work, and unquoted mandatory regulatory or commercial charges."
+      ],
+      "queries": [
+        {
+          "id": "cost-model",
+          "source": {
+            "label": "Planning model and vendor price anchors",
+            "files": [
+              {
+                "label": "assumptions.json"
+              },
+              {
+                "label": "model.py"
+              },
+              {
+                "label": "results.json"
+              }
+            ],
+            "links": [
+              {
+                "label": "OpenAI model pricing",
+                "url": "https://developers.openai.com/api/docs/models/gpt-6.1-sol"
+              },
+              {
+                "label": "DigitalOcean compute pricing",
+                "url": "https://www.digitalocean.com/pricing/droplets"
+              },
+              {
+                "label": "Supabase pricing",
+                "url": "https://supabase.com/pricing"
+              },
+              {
+                "label": "Paystack international fees",
+                "url": "https://support.paystack.com/en/articles/2130690"
+              },
+              {
+                "label": "Market Data redistribution policy",
+                "url": "https://www.marketdata.app/docs/account/data-policies/data-redistribution/"
+              },
+              {
+                "label": "TradersPost pricing",
+                "url": "https://traderspost.io/pricing"
+              }
+            ],
+            "caveats": [
+              "There are no measured customers, costs, retention or willingness-to-pay data for this project.",
+              "Free users are limited: three active-free accounts at $0.20 each are subsidized per payer; no unlimited AI or live automation is included for free users."
+            ],
+            "evidenceFlow": [
+              {
+                "kind": "calculation",
+                "title": "Unit economics",
+                "detail": "AI = 60 \u00d7 (5,000 \u00d7 $2 + 2,000 \u00d7 $10) / 1,000,000 = $1.80 per payer. Total modeled variable cost = $11.45 per payer; add shared operations by capacity."
+              },
+              {
+                "kind": "validation",
+                "title": "Reconciliation",
+                "detail": "Model assertions passed for the price mix, AI cost, independently summed 1,000-user cost stack, and revenue minus costs equaling modeled operating balance."
+              }
+            ]
+          },
+          "reportingPeriod": "Illustrative monthly run rates; vendor anchors checked 3 November 2026",
+          "columns": [
+            {
+              "field": "paying_users",
+              "label": "Paying users"
+            },
+            {
+              "field": "gross_monthly_subscription_revenue",
+              "label": "Gross MRR (USD)"
+            },
+            {
+              "field": "direct_service_cost",
+              "label": "Direct service costs (USD)"
+            },
+            {
+              "field": "direct_cost_per_payer",
+              "label": "Direct cost/payer (USD)"
+            },
+            {
+              "field": "engineering_admin_allowance",
+              "label": "Engineering/admin allowance (USD)"
+            },
+            {
+              "field": "acquisition_budget",
+              "label": "Acquisition allowance (USD)"
+            },
+            {
+              "field": "modeled_operating_balance_before_tax",
+              "label": "Modeled operating balance before tax (USD)"
+            }
+          ],
+          "rows": [
+            {
+              "paying_users": 100,
+              "gross_monthly_subscription_revenue": 3900.0,
+              "direct_service_cost": 1445.0,
+              "direct_cost_per_payer": 14.45,
+              "engineering_admin_allowance": 3000,
+              "acquisition_budget": 300.0,
+              "modeled_operating_balance_before_tax": -845.0
+            },
+            {
+              "paying_users": 500,
+              "gross_monthly_subscription_revenue": 19500.0,
+              "direct_service_cost": 6325.0,
+              "direct_cost_per_payer": 12.65,
+              "engineering_admin_allowance": 6000.0,
+              "acquisition_budget": 1500.0,
+              "modeled_operating_balance_before_tax": 5675.0
+            },
+            {
+              "paying_users": 1000,
+              "gross_monthly_subscription_revenue": 39000.0,
+              "direct_service_cost": 12450.0,
+              "direct_cost_per_payer": 12.45,
+              "engineering_admin_allowance": 10000.0,
+              "acquisition_budget": 3000.0,
+              "modeled_operating_balance_before_tax": 13550.0
+            },
+            {
+              "paying_users": 5000,
+              "gross_monthly_subscription_revenue": 195000.0,
+              "direct_service_cost": 60250.0,
+              "direct_cost_per_payer": 12.05,
+              "engineering_admin_allowance": 30000.0,
+              "acquisition_budget": 15000.0,
+              "modeled_operating_balance_before_tax": 89750.0
+            },
+            {
+              "paying_users": 10000,
+              "gross_monthly_subscription_revenue": 390000.0,
+              "direct_service_cost": 119500.0,
+              "direct_cost_per_payer": 11.95,
+              "engineering_admin_allowance": 50000.0,
+              "acquisition_budget": 30000.0,
+              "modeled_operating_balance_before_tax": 190500.0
+            }
+          ],
+          "methods": [
+            {
+              "language": "python",
+              "code": "\"\"\"Deterministic, assumption-driven business scenarios. No live company metrics.\"\"\"\nimport csv\nimport json\nfrom pathlib import Path\n\nROOT = Path(__file__).resolve().parent\n\n\ndef load():\n    return json.loads((ROOT / \"assumptions.json\").read_text(encoding=\"utf-8\"))\n\n\ndef components(a, price=None, ai_calls=None, data_cost=None):\n    price = price if price is not None else sum(p[\"price\"] * p[\"mix\"] for p in a[\"monthly_plans\"])\n    ai = a[\"ai\"]\n    calls = ai_calls if ai_calls is not None else ai[\"calls_per_payer\"]\n    return {\n        \"ai\": calls * (ai[\"input_tokens_per_call\"] * ai[\"input_per_million\"] + ai[\"billable_output_tokens_per_call\"] * ai[\"output_per_million\"]) / 1_000_000,\n        \"execution\": a[\"execution_per_payer\"],\n        \"market_data\": data_cost if data_cost is not None else a[\"market_data_per_payer\"],\n        \"support\": a[\"support_per_payer\"],\n        \"identity_storage_notifications\": a[\"identity_storage_notifications_per_payer\"],\n        \"active_free_subsidy\": a[\"active_free_per_payer\"] * a[\"cost_per_active_free\"],\n        \"payment_processing\": price * a[\"payment_percentage\"] + a[\"payment_fixed\"],\n        \"refund_allowance\": price * a[\"refund_percentage\"],\n    }\n\n\ndef capacity(a, n, field):\n    points = a[\"capacity_anchors\"]\n    if n <= points[0][\"payers\"]:\n        return points[0][field]\n    for left, right in zip(points, points[1:]):\n        if n <= right[\"payers\"]:\n            fraction = (n - left[\"payers\"]) / (right[\"payers\"] - left[\"payers\"])\n            return left[field] + fraction * (right[field] - left[field])\n    raise ValueError(\"Model not calibrated above 10,000 paying users\")\n\n\ndef economics(a, n, new_payers=None, price=None, ai_calls=None, data_cost=None, cac=None):\n    price = price if price is not None else sum(p[\"price\"] * p[\"mix\"] for p in a[\"monthly_plans\"])\n    variable = sum(components(a, price, ai_calls, data_cost).values())\n    shared = capacity(a, n, \"shared_operations\")\n    team = capacity(a, n, \"engineering_admin_allowance\")\n    new_payers = n * a[\"run_rate_new_payers_fraction\"] if new_payers is None else new_payers\n    acquisition = new_payers * (a[\"cost_per_gross_new_payer\"] if cac is None else cac)\n    revenue = n * price\n    service = n * variable + shared\n    return {\n        \"paying_users\": n, \"active_free_users\": n * a[\"active_free_per_payer\"],\n        \"gross_monthly_subscription_revenue\": revenue,\n        \"direct_service_cost\": service, \"direct_cost_per_payer\": service / n if n else None,\n        \"service_contribution\": revenue - service,\n        \"engineering_admin_allowance\": team, \"acquisition_budget\": acquisition,\n        \"modeled_operating_balance_before_tax\": revenue - service - team - acquisition,\n        \"all_in_modeled_cost\": service + team + acquisition,\n    }\n\n\ndef build(a):\n    price = sum(p[\"price\"] * p[\"mix\"] for p in a[\"monthly_plans\"])\n    scale = [economics(a, n) for n in [100, 500, 1000, 5000, 10000]]\n    growth = []\n    for name, schedule in a[\"gross_new_payers_by_month\"].items():\n        active = 0.0\n        cumulative = 0.0\n        cumulative_revenue = 0.0\n        for month, additions in enumerate(schedule, 1):\n            churned = active * a[\"monthly_paid_churn\"]\n            active = active - churned + additions\n            # Approximate earned monthly revenue/cost: all end-month payers treated as a full month.\n            row = economics(a, active, new_payers=additions)\n            cumulative += row[\"modeled_operating_balance_before_tax\"]\n            cumulative_revenue += row[\"gross_monthly_subscription_revenue\"]\n            growth.append({\"scenario\":name,\"month_after_commercial_launch\":month,\"gross_new_payers\":additions,\"expected_churned_payers\":churned,**row,\"cumulative_modeled_operating_balance\":cumulative,\"cumulative_gross_subscription_revenue\":cumulative_revenue})\n    sensitivity = []\n    for label, params in [\n        (\"Base assumptions\", {}),\n        (\"AI calls 5x: 300 per payer\", {\"ai_calls\":300}),\n        (\"Market data $10 per payer\", {\"data_cost\":10}),\n        (\"Market data $25 per payer\", {\"data_cost\":25}),\n        (\"Acquisition cost $100\", {\"cac\":100}),\n        (\"Average subscription $29\", {\"price\":29}),\n        (\"Combined: 5x AI, $25 data, $100 CAC\", {\"ai_calls\":300,\"data_cost\":25,\"cac\":100}),\n    ]:\n        sensitivity.append({\"case\":label, **economics(a, 1000, **params)})\n    # Break-even holds the 1,000-payer capacity and acquisition allowance per payer fixed.\n    fixed_1000 = capacity(a,1000,\"shared_operations\") + capacity(a,1000,\"engineering_admin_allowance\")\n    contribution_after_acquisition = price - sum(components(a).values()) - a[\"run_rate_new_payers_fraction\"] * a[\"cost_per_gross_new_payer\"]\n    result = {\"status\":a[\"status\"],\"currency\":\"USD\",\"average_monthly_price\":price,\"variable_components\":components(a),\"variable_cost_per_payer\":sum(components(a).values()),\"scale\":scale,\"growth\":growth,\"sensitivity_at_1000_payers\":sensitivity,\"fixed_capacity_break_even_payers\":fixed_1000/contribution_after_acquisition}\n    validate(a, result)\n    return result\n\n\ndef validate(a, r):\n    assert abs(sum(p[\"mix\"] for p in a[\"monthly_plans\"]) - 1) < 1e-9\n    assert abs(r[\"average_monthly_price\"] - 39) < 1e-9\n    assert abs(r[\"variable_components\"][\"ai\"] - 1.8) < 1e-9\n    # Independently check one cost stack and its operating arithmetic.\n    expected = 1.8 + 1.2 + 3 + 2 + 0.6 + 3*0.2 + 39*0.04 + 0.3 + 39*0.01\n    row = next(x for x in r[\"scale\"] if x[\"paying_users\"] == 1000)\n    assert abs(row[\"direct_service_cost\"] - (expected*1000 + 1000)) < 1e-8\n    assert abs(row[\"modeled_operating_balance_before_tax\"] - (39000 - 12450 - 10000 - 3000)) < 1e-8\n    for name, schedule in a[\"gross_new_payers_by_month\"].items():\n        rows = [x for x in r[\"growth\"] if x[\"scenario\"] == name]\n        previous = 0.0\n        for index, row in enumerate(rows):\n            expected = previous * 0.95 + schedule[index]\n            assert abs(row[\"paying_users\"] - expected) < 1e-8\n            assert abs(row[\"gross_monthly_subscription_revenue\"] - row[\"paying_users\"] * 39) < 1e-8\n            previous = row[\"paying_users\"]\n    for row in r[\"scale\"] + r[\"growth\"] + r[\"sensitivity_at_1000_payers\"]:\n        assert abs(row[\"gross_monthly_subscription_revenue\"] - row[\"all_in_modeled_cost\"] - row[\"modeled_operating_balance_before_tax\"]) < 1e-7\n\n\ndef write_outputs(a, r):\n    (ROOT / \"results.json\").write_text(json.dumps(r,indent=2)+\"\\n\",encoding=\"utf-8\")\n    for key, filename in [(\"scale\",\"scale.csv\"),(\"growth\",\"growth.csv\"),(\"sensitivity_at_1000_payers\",\"sensitivity.csv\")]:\n        with (ROOT / filename).open(\"w\",newline=\"\",encoding=\"utf-8\") as f:\n            writer=csv.DictWriter(f,fieldnames=r[key][0].keys())\n            writer.writeheader()\n            writer.writerows(r[key])\n\n\nif __name__ == \"__main__\":\n    assumptions=load()\n    results=build(assumptions)\n    write_outputs(assumptions, results)\n    print(json.dumps({\"variable_cost\":results[\"variable_cost_per_payer\"],\"scale\":results[\"scale\"],\"milestones\":[{\"scenario\":x[\"scenario\"],\"month\":x[\"month_after_commercial_launch\"],\"payers\":round(x[\"paying_users\"]),\"mrr\":round(x[\"gross_monthly_subscription_revenue\"]),\"balance\":round(x[\"modeled_operating_balance_before_tax\"]),\"cumulative\":round(x[\"cumulative_modeled_operating_balance\"])} for x in results[\"growth\"] if x[\"month_after_commercial_launch\"] in [3,6,12]],\"sensitivity\":results[\"sensitivity_at_1000_payers\"],\"break_even\":results[\"fixed_capacity_break_even_payers\"]},indent=2))\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "growth-scenarios",
+      "title": "Illustrative adoption and revenue after commercial launch",
+      "assumptions": [
+        "Monthly paying-user churn is assumed to be 5% in all scenarios.",
+        "New paying-user acquisition schedules are invented planning inputs, not demand evidence or predictions.",
+        "Revenue is end-month gross subscription run rate, not cumulative revenue or cash collected."
+      ],
+      "queries": [
+        {
+          "id": "adoption-model",
+          "source": {
+            "label": "Explicit acquisition schedules and churn recurrence",
+            "files": [
+              {
+                "label": "assumptions.json"
+              },
+              {
+                "label": "growth.csv"
+              }
+            ],
+            "caveats": [
+              "The launch date is unknown; month numbers are relative to a future commercial launch.",
+              "Expected users are rounded; dollar results use the unrounded expected count. No scenario has an assigned probability."
+            ]
+          },
+          "reportingPeriod": "Months 3, 6 and 12 after commercial launch",
+          "columns": [
+            "scenario",
+            "month",
+            "paying_users_approx",
+            "gross_mrr_approx"
+          ],
+          "rows": [
+            {
+              "scenario": "Slower adoption",
+              "month": 3,
+              "paying_users_approx": 43,
+              "gross_mrr_approx": 1688
+            },
+            {
+              "scenario": "Slower adoption",
+              "month": 6,
+              "paying_users_approx": 123,
+              "gross_mrr_approx": 4803
+            },
+            {
+              "scenario": "Slower adoption",
+              "month": 12,
+              "paying_users_approx": 373,
+              "gross_mrr_approx": 14533
+            },
+            {
+              "scenario": "Working case",
+              "month": 3,
+              "paying_users_approx": 115,
+              "gross_mrr_approx": 4488
+            },
+            {
+              "scenario": "Working case",
+              "month": 6,
+              "paying_users_approx": 299,
+              "gross_mrr_approx": 11673
+            },
+            {
+              "scenario": "Working case",
+              "month": 12,
+              "paying_users_approx": 837,
+              "gross_mrr_approx": 32652
+            },
+            {
+              "scenario": "Strong adoption",
+              "month": 3,
+              "paying_users_approx": 313,
+              "gross_mrr_approx": 12195
+            },
+            {
+              "scenario": "Strong adoption",
+              "month": 6,
+              "paying_users_approx": 986,
+              "gross_mrr_approx": 38458
+            },
+            {
+              "scenario": "Strong adoption",
+              "month": 12,
+              "paying_users_approx": 3281,
+              "gross_mrr_approx": 127961
+            }
+          ],
+          "methods": [
+            {
+              "language": "calculation",
+              "code": "Expected paid users in month t = expected paid users in month t\u22121 \u00d7 0.95 + assumed gross new paid users in month t.\nGross MRR = expected paid users \u00d7 $39.\nSlower additions by month: 10,15,20,25,30,35,40,45,50,55,60,65.\nWorking additions: 30,40,50,60,70,80,90,100,110,120,130,140.\nStrong additions: 75,100,150,200,250,300,350,400,450,500,550,600."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

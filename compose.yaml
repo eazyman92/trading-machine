@@ -1,0 +1,62 @@
+name: trading-research
+x-backend: &backend
+  build: .
+  environment:
+    DATABASE_URL: postgresql://research:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/research
+  restart: unless-stopped
+services:
+  db:
+    image: postgres:17.5
+    environment:
+      POSTGRES_DB: research
+      POSTGRES_USER: research
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - research-db:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U research -d research"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+  migrate:
+    <<: *backend
+    command: [python, -m, tradinglab.store, migrate]
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+  api:
+    <<: *backend
+    command: [python, -m, uvicorn, tradinglab.api:app, --host, 0.0.0.0, --port, '8000', --reload]
+    volumes:
+      - ./src:/app/src:ro
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  worker:
+    <<: *backend
+    command: [python, -m, tradinglab.worker]
+    volumes:
+      - ./src:/app/src:ro
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+  web:
+    image: nginx:1.28-alpine
+    ports:
+      - 127.0.0.1:4173:80
+    volumes:
+      - ./prototype/dist:/usr/share/nginx/html:ro
+      - ./infra/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+volumes:
+  research-db:

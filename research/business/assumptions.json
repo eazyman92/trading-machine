@@ -1,0 +1,39 @@
+{
+  "as_of": "2026-11-03",
+  "currency": "USD",
+  "status": "Illustrative pre-launch scenarios, not measured costs, demand, or a forecast",
+  "monthly_plans": [{"price":19,"mix":0.5},{"price":49,"mix":0.4},{"price":99,"mix":0.1}],
+  "ai": {"calls_per_payer":60,"input_tokens_per_call":5000,"billable_output_tokens_per_call":2000,"input_per_million":2,"output_per_million":10},
+  "execution_per_payer":1.2,
+  "market_data_per_payer":3,
+  "support_per_payer":2,
+  "identity_storage_notifications_per_payer":0.6,
+  "active_free_per_payer":3,
+  "cost_per_active_free":0.2,
+  "payment_percentage":0.04,
+  "payment_fixed":0.3,
+  "refund_percentage":0.01,
+  "monthly_paid_churn":0.05,
+  "cost_per_gross_new_payer":30,
+  "run_rate_new_payers_fraction":0.1,
+  "capacity_anchors":[
+    {"payers":100,"shared_operations":300,"engineering_admin_allowance":3000},
+    {"payers":500,"shared_operations":600,"engineering_admin_allowance":6000},
+    {"payers":1000,"shared_operations":1000,"engineering_admin_allowance":10000},
+    {"payers":5000,"shared_operations":3000,"engineering_admin_allowance":30000},
+    {"payers":10000,"shared_operations":5000,"engineering_admin_allowance":50000}
+  ],
+  "gross_new_payers_by_month":{
+    "Slower adoption":[10,15,20,25,30,35,40,45,50,55,60,65],
+    "Working case":[30,40,50,60,70,80,90,100,110,120,130,140],
+    "Strong adoption":[75,100,150,200,250,300,350,400,450,500,550,600]
+  },
+  "sources":[
+    {"label":"OpenAI model pricing","url":"https://developers.openai.com/api/docs/models/gpt-6.1-sol","use":"Published standard token prices only; workload is assumed"},
+    {"label":"DigitalOcean compute pricing","url":"https://www.digitalocean.com/pricing/droplets","use":"Cost anchor only, not a server capacity benchmark or selected vendor"},
+    {"label":"Supabase pricing","url":"https://supabase.com/pricing","use":"Managed database cost anchor only"},
+    {"label":"Paystack international fees","url":"https://support.paystack.com/en/articles/2130690","use":"Fee variation context; modeled 4% plus $0.30 is a blended assumption, not a Paystack quote"},
+    {"label":"Market Data redistribution policy","url":"https://www.marketdata.app/docs/account/data-policies/data-redistribution/","use":"Commercial usage rights must be checked; $3 per payer is an unquoted allowance"},
+    {"label":"TradersPost pricing","url":"https://traderspost.io/pricing","use":"Comparable subscription-product context, not evidence of our willingness to pay"}
+  ]
+}

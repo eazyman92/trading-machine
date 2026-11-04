@@ -1,0 +1,292 @@
+[
+  {
+    "name": "valid paper",
+    "accepted": true,
+    "now_ms": 101000,
+    "order": {
+      "schema_version": 1,
+      "environment": "paper",
+      "symbol": "EUR_USD",
+      "side": "buy",
+      "quantity_units": 1000,
+      "entry_ticks": 110051,
+      "stop_ticks": 110004,
+      "target_ticks": 110145,
+      "quote_at_ms": 100000,
+      "expires_at_ms": 110000
+    }
+  },
+  {
+    "name": "live blocked",
+    "accepted": false,
+    "now_ms": 101000,
+    "order": {
+      "schema_version": 1,
+      "environment": "live",
+      "symbol": "EUR_USD",
+      "side": "buy",
+      "quantity_units": 1000,
+      "entry_ticks": 110051,
+      "stop_ticks": 110004,
+      "target_ticks": 110145,
+      "quote_at_ms": 100000,
+      "expires_at_ms": 110000
+    }
+  },
+  {
+    "name": "stale quote",
+    "accepted": false,
+    "now_ms": 101000,
+    "order": {
+      "schema_version": 1,
+      "environment": "paper",
+      "symbol": "EUR_USD",
+      "side": "buy",
+      "quantity_units": 1000,
+      "entry_ticks": 110051,
+      "stop_ticks": 110004,
+      "target_ticks": 110145,
+      "quote_at_ms": 98000,
+      "expires_at_ms": 110000
+    }
+  },
+  {
+    "name": "future quote",
+    "accepted": false,
+    "now_ms": 101000,
+    "order": {
+      "schema_version": 1,
+      "environment": "paper",
+      "symbol": "EUR_USD",
+      "side": "buy",
+      "quantity_units": 1000,
+      "entry_ticks": 110051,
+      "stop_ticks": 110004,
+      "target_ticks": 110145,
+      "quote_at_ms": 102000,
+      "expires_at_ms": 110000
+    }
+  },
+  {
+    "name": "expired",
+    "accepted": false,
+    "now_ms": 101000,
+    "order": {
+      "schema_version": 1,
+      "environment": "paper",
+      "symbol": "EUR_USD",
+      "side": "buy",
+      "quantity_units": 1000,
+      "entry_ticks": 110051,
+      "stop_ticks": 110004,
+      "target_ticks": 110145,
+      "quote_at_ms": 100000,
+      "expires_at_ms": 101000
+    }
+  },
+  {
+    "name": "long expiry",
+    "accepted": false,
+    "now_ms": 101000,
+    "order": {
+      "schema_version": 1,
+      "environment": "paper",
+      "symbol": "EUR_USD",
+      "side": "buy",
+      "quantity_units": 1000,
+      "entry_ticks": 110051,
+      "stop_ticks": 110004,
+      "target_ticks": 110145,
+      "quote_at_ms": 100000,
+      "expires_at_ms": 162000
+    }
+  },
+  {
+    "name": "unsupported instrument",
+    "accepted": false,
+    "now_ms": 101000,
+    "order": {
+      "schema_version": 1,
+      "environment": "paper",
+      "symbol": "USD_JPY",
+      "side": "buy",
+      "quantity_units": 1000,
+      "entry_ticks": 110051,
+      "stop_ticks": 110004,
+      "target_ticks": 110145,
+      "quote_at_ms": 100000,
+      "expires_at_ms": 110000
+    }
+  },
+  {
+    "name": "fractional units",
+    "accepted": false,
+    "now_ms": 101000,
+    "order": {
+      "schema_version": 1,
+      "environment": "paper",
+      "symbol": "EUR_USD",
+      "side": "buy",
+      "quantity_units": 1.5,
+      "entry_ticks": 110051,
+      "stop_ticks": 110004,
+      "target_ticks": 110145,
+      "quote_at_ms": 100000,
+      "expires_at_ms": 110000
+    }
+  },
+  {
+    "name": "boolean units",
+    "accepted": false,
+    "now_ms": 101000,
+    "order": {
+      "schema_version": 1,
+      "environment": "paper",
+      "symbol": "EUR_USD",
+      "side": "buy",
+      "quantity_units": true,
+      "entry_ticks": 110051,
+      "stop_ticks": 110004,
+      "target_ticks": 110145,
+      "quote_at_ms": 100000,
+      "expires_at_ms": 110000
+    }
+  },
+  {
+    "name": "negative units",
+    "accepted": false,
+    "now_ms": 101000,
+    "order": {
+      "schema_version": 1,
+      "environment": "paper",
+      "symbol": "EUR_USD",
+      "side": "buy",
+      "quantity_units": -1,
+      "entry_ticks": 110051,
+      "stop_ticks": 110004,
+      "target_ticks": 110145,
+      "quote_at_ms": 100000,
+      "expires_at_ms": 110000
+    }
+  },
+  {
+    "name": "excess quantity",
+    "accepted": false,
+    "now_ms": 101000,
+    "order": {
+      "schema_version": 1,
+      "environment": "paper",
+      "symbol": "EUR_USD",
+      "side": "buy",
+      "quantity_units": 10001,
+      "entry_ticks": 110051,
+      "stop_ticks": 110004,
+      "target_ticks": 110145,
+      "quote_at_ms": 100000,
+      "expires_at_ms": 110000
+    }
+  },
+  {
+    "name": "stop geometry",
+    "accepted": false,
+    "now_ms": 101000,
+    "order": {
+      "schema_version": 1,
+      "environment": "paper",
+      "symbol": "EUR_USD",
+      "side": "buy",
+      "quantity_units": 1000,
+      "entry_ticks": 110051,
+      "stop_ticks": 110060,
+      "target_ticks": 110145,
+      "quote_at_ms": 100000,
+      "expires_at_ms": 110000
+    }
+  },
+  {
+    "name": "risk exceeded",
+    "accepted": false,
+    "now_ms": 101000,
+    "order": {
+      "schema_version": 1,
+      "environment": "paper",
+      "symbol": "EUR_USD",
+      "side": "buy",
+      "quantity_units": 1000,
+      "entry_ticks": 110051,
+      "stop_ticks": 100000,
+      "target_ticks": 110145,
+      "quote_at_ms": 100000,
+      "expires_at_ms": 110000
+    }
+  },
+  {
+    "name": "notional exceeded",
+    "accepted": false,
+    "now_ms": 101000,
+    "order": {
+      "schema_version": 1,
+      "environment": "paper",
+      "symbol": "EUR_USD",
+      "side": "buy",
+      "quantity_units": 10000,
+      "entry_ticks": 110051,
+      "stop_ticks": 110004,
+      "target_ticks": 110145,
+      "quote_at_ms": 100000,
+      "expires_at_ms": 110000
+    }
+  },
+  {
+    "name": "unknown field",
+    "accepted": false,
+    "now_ms": 101000,
+    "order": {
+      "schema_version": 1,
+      "environment": "paper",
+      "symbol": "EUR_USD",
+      "side": "buy",
+      "quantity_units": 1000,
+      "entry_ticks": 110051,
+      "stop_ticks": 110004,
+      "target_ticks": 110145,
+      "quote_at_ms": 100000,
+      "expires_at_ms": 110000,
+      "broker_token": "fixture"
+    }
+  },
+  {
+    "name": "valid sell",
+    "accepted": true,
+    "now_ms": 101000,
+    "order": {
+      "schema_version": 1,
+      "environment": "paper",
+      "symbol": "EUR_USD",
+      "side": "sell",
+      "quantity_units": 1000,
+      "entry_ticks": 110051,
+      "stop_ticks": 110098,
+      "target_ticks": 109957,
+      "quote_at_ms": 100000,
+      "expires_at_ms": 110000
+    }
+  },
+  {
+    "name": "overflow attempt",
+    "accepted": false,
+    "now_ms": 101000,
+    "order": {
+      "schema_version": 1,
+      "environment": "paper",
+      "symbol": "EUR_USD",
+      "side": "buy",
+      "quantity_units": 1000000000000000000,
+      "entry_ticks": 110051,
+      "stop_ticks": 110004,
+      "target_ticks": 110145,
+      "quote_at_ms": 100000,
+      "expires_at_ms": 110000
+    }
+  }
+]

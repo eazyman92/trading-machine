@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>Axiom — Trading workspace prototype</title>
+  <meta name="description" content="An interactive local design prototype for a multi-asset trading platform. All account and market data is illustrative.">
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+  <script src="research.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to workspace</a>
+  <aside class="sidebar">
+    <a class="brand" href="#overview" aria-label="Axiom overview"><span class="brand-mark">A</span> axiom<span class="brand-dot">.</span></a>
+    <div class="workspace-label">PERSONAL WORKSPACE</div>
+    <nav aria-label="Main navigation">
+      <a href="#overview" data-page="overview"><span aria-hidden="true">◫</span> Overview</a>
+      <a href="#trade" data-page="trade"><span aria-hidden="true">⌁</span> Trading workspace</a>
+      <a href="#strategies" data-page="strategies"><span aria-hidden="true">◇</span> Strategies <small>2</small></a>
+      <a href="#research" data-page="research"><span aria-hidden="true">⌕</span> Research lab</a>
+      <a href="#activity" data-page="activity"><span aria-hidden="true">≡</span> Activity <small id="activity-count">2</small></a>
+      <a href="#risk" data-page="risk"><span aria-hidden="true">⬡</span> Risk controls</a>
+      <a href="#connections" data-page="connections"><span aria-hidden="true">⊞</span> Connections & security</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="sandbox-note"><span class="status-dot"></span> YOUR PRACTICE SPACE<p>Explore the experience.<br>Every trade here is simulated.</p></div>
+      <div class="profile"><span class="avatar">T</span><div>Personal workspace<small>Design preview</small></div><span aria-hidden="true">⌄</span></div>
+    </div>
+  </aside>
+  <div class="shell">
+    <header class="topbar">
+      <div class="breadcrumb">Workspace <span>/</span> <strong id="breadcrumb">Overview</strong></div>
+      <div class="top-actions"><span class="paper-pill"><span class="status-dot"></span> PAPER ACCOUNT</span><button class="icon-btn" id="theme-toggle" aria-label="Switch to light theme" title="Switch theme">☀</button><span class="top-avatar">T</span></div>
+    </header>
+    <div class="demo-banner"><span>DESIGN PROTOTYPE</span> Illustrative prices and account data. No broker is connected.</div>
+    <main id="main" tabindex="-1"></main>
+    <footer><span>AXIOM / LOCAL DESIGN PREVIEW</span><span>Sample data · USD account · Display times in UTC</span></footer>
+  </div>
+  <dialog id="order-dialog" aria-labelledby="dialog-title"><form method="dialog" class="dialog-inner"><div class="eyebrow">PAPER ORDER</div><h2 id="dialog-title">Review your order</h2><div id="order-review"></div><p class="muted">This creates an illustrative fill in this browser tab. It does not send an order to a broker.</p><div class="dialog-actions"><button class="btn secondary" value="cancel">Go back</button><button class="btn primary" id="confirm-order" value="confirm">Confirm paper order</button></div></form></dialog>
+  <div id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

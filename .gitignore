@@ -1,0 +1,14 @@
+.venv/
+.local-deps/
+.tools/
+__pycache__/
+.pytest_cache/
+target/
+output/replay/
+.env
+output/*.db
+output/*.db-*
+# Generated reports, screenshots and downloaded upstream research snapshots.
+output/
+research/sources/*
+!research/sources/manifest.json

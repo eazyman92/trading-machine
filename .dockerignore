@@ -1,0 +1,10 @@
+.git
+.venv
+.local-deps
+.tools
+output
+research/sources
+__pycache__
+.pytest_cache
+execution/target
+.env

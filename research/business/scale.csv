@@ -1,0 +1,6 @@
+paying_users,active_free_users,gross_monthly_subscription_revenue,direct_service_cost,direct_cost_per_payer,service_contribution,engineering_admin_allowance,acquisition_budget,modeled_operating_balance_before_tax,all_in_modeled_cost
+100,300,3900.0,1445.0,14.45,2455.0,3000,300.0,-845.0,4745.0
+500,1500,19500.0,6325.0,12.65,13175.0,6000.0,1500.0,5675.0,13825.0
+1000,3000,39000.0,12450.0,12.45,26550.0,10000.0,3000.0,13550.0,25450.0
+5000,15000,195000.0,60250.0,12.05,134750.0,30000.0,15000.0,89750.0,105250.0
+10000,30000,390000.0,119500.0,11.95,270500.0,50000.0,30000.0,190500.0,199500.0

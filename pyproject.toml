@@ -1,0 +1,9 @@
+[project]
+name = "trading-research-lab"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = ["tzdata==2025.2"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src", ".local-deps"]
+testpaths = ["tests"]
