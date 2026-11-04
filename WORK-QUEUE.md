@@ -44,6 +44,8 @@ Local synthetic development may precede identity; no public deployment or multi-
 
 ## Completion record
 
+Saved research history increment: added bounded history API and dashboard paging/reopen controls, with newest-run restoration on reload. Fourteen Python tests pass. The persistence-check CLI saved and matched a completed result across a local API/worker process restart using SQLite. EC2/PostgreSQL container-recreation verification remains owner-run using EC2-TEST.md; browser interaction testing of the new history controls is still pending.
+
 4 November 2026 — F04 partial: added GitHub Actions jobs for Python regression tests, Rust shared vectors and a Compose/PostgreSQL HTTP smoke test; added scripts/smoke_research.py and Git Bash/EC2 instructions in EC2-TEST.md. Local regression remains 13 passing tests. Workflow YAML parses, but GitHub execution, container builds and Rust compilation are still pending; no repository remote exists yet.
 
 4 November 2026 — W02/W03 partial: added versioned research API, durable SQL queue, separate worker and connected Research lab screen. Thirteen Python tests pass in SQLite mode, including idempotent creation, concurrent claiming, cancellation precedence, expired leases and failures. Compose definitions added for web/API/worker/PostgreSQL/schema initialization; Docker is unavailable, so the PostgreSQL/container path remains unverified. Web still uses the existing buildless prototype; TypeScript scaffold, identity and account isolation remain open. See DEVELOPMENT.md.

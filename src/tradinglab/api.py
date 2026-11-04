@@ -1,7 +1,7 @@
 """Loopback development API. Not authenticated or suitable for public exposure."""
 from typing import Literal
 from uuid import UUID
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import FastAPI, Header, HTTPException, Query
 from pydantic import BaseModel, ConfigDict
 from tradinglab.store import Store, Conflict
 
@@ -29,6 +29,10 @@ def get_job(job_id: UUID):
     job = Store().get(str(job_id))
     if job is None: raise HTTPException(404, 'Research job not found')
     return job
+
+@app.get('/api/v1/research/jobs')
+def list_jobs(limit: int = Query(20, ge=1, le=100), offset: int = Query(0, ge=0, le=100000)):
+    return Store().list_jobs(limit, offset)
 
 @app.post('/api/v1/research/jobs/{job_id}/cancel')
 def cancel_job(job_id: UUID):

@@ -58,6 +58,19 @@ Open `http://127.0.0.1:4173/#research` locally. If local port 4173 is occupied, 
 
 ## Stop or update
 
+### Verify saved results across a restart
+
+After running a completed job, save its fingerprint, restart the stack without deleting volumes, then compare the stored result. Substitute port 4174 below if that is your EC2 web mapping.
+
+```bash
+python3 scripts/check_persistence.py save --base-url http://127.0.0.1:4173
+docker compose down
+docker compose up -d --wait --wait-timeout 180
+python3 scripts/check_persistence.py verify --base-url http://127.0.0.1:4173
+```
+
+Refresh Research lab: the newest saved run should reopen, and **Saved research runs** lets you select earlier jobs. History is shared by this unauthenticated development workspace; it is not yet separated by user. This check verifies persistence across container recreation, not backup recovery or host/disk loss.
+
 ```bash
 docker compose down
 # For a later code update:

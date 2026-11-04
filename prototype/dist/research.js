@@ -1,6 +1,7 @@
 'use strict';
 (() => {
   let job = null, timer = null, pending = false, error = '', requestKey = null;
+  let history = [], offset = 0, nextOffset = null, selection = 0;
   const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const terminal = () => job && ['completed','failed','cancelled'].includes(job.status);
   function draw() {
@@ -17,6 +18,14 @@
       ${result ? `<section class="panel content-card"><h2>Completed fixture replay</h2><p>${escape(result.bar_count)} candles · ${escape(result.trades.length)} trades · ${escape(result.rejected_sessions.length)} excluded sessions</p><p class="muted">${escape(result.cost_model)}</p><div style="overflow-x:auto"><table><thead><tr><th>Session</th><th>Side</th><th>Units</th><th>Entry (UTC)</th><th>Exit reason</th><th>Net USD</th></tr></thead><tbody>${result.trades.map(t=>`<tr><td>${escape(t.session)}</td><td>${escape(t.side)}</td><td>${escape(t.units)}</td><td>${escape(t.entry_at)}</td><td>${escape(t.reason)}</td><td>${escape(t.net_usd)}</td></tr>`).join('')}</tbody></table></div><details><summary>Trade details, exclusions and reproducibility metadata</summary><pre style="white-space:pre-wrap;overflow-wrap:anywhere">${escape(JSON.stringify(result,null,2))}</pre></details><p class="muted">Dataset SHA-256: <span style="overflow-wrap:anywhere">${escape(result.dataset_sha256)}</span></p></section>` : ''}`;
     root.querySelector('#run-research').addEventListener('click', submit);
     root.querySelector('#cancel-research')?.addEventListener('click', cancel);
+    const saved = document.createElement('section');
+    saved.className='panel content-card';
+    saved.innerHTML=`<h2>Saved research runs</h2><p class="muted">Saved in the development database. Select a run to reopen its results.</p><button class="btn secondary" id="refresh-history">Refresh history</button><div>${history.map(h=>`<p><button class="btn secondary" data-job-id="${escape(h.id)}">${escape(new Date(h.created_at*1000).toISOString())} · ${escape(h.status)} · ${escape(h.id.slice(0,8))}</button></p>`).join('') || '<p>No saved runs on this page.</p>'}</div><button class="btn secondary" id="history-prev" ${offset===0?'disabled':''}>Previous</button> <button class="btn secondary" id="history-next" ${nextOffset===null?'disabled':''}>Next</button>`;
+    root.append(saved);
+    saved.querySelector('#refresh-history').onclick=()=>loadHistory(false);
+    saved.querySelector('#history-prev').onclick=()=>{offset=Math.max(0,offset-20);loadHistory(false);};
+    saved.querySelector('#history-next').onclick=()=>{offset=nextOffset;loadHistory(false);};
+    saved.querySelectorAll('[data-job-id]').forEach(b=>b.onclick=()=>openJob(b.dataset.jobId));
   }
   async function api(path, options) {
     const response = await fetch('/api/v1/research/jobs'+path, {...options, signal: AbortSignal.timeout(10000)});
@@ -28,21 +37,36 @@
     if (job && !terminal() && document.querySelector('#research-root')) timer=setTimeout(poll,750);
   }
   async function poll() {
-    try { job=await api('/'+job.id); error=''; } catch (e) { error=e.message; }
+    const current=selection, id=job.id;
+    try { const fetched=await api('/'+id); if(current!==selection)return; job=fetched; error=''; } catch (e) { if(current!==selection)return; error=e.message; }
     draw(); schedule();
+    if(terminal())loadHistory(false);
+  }
+  async function openJob(id) {
+    const current=++selection; clearTimeout(timer);
+    try {const fetched=await api('/'+id);if(current!==selection)return;job=fetched;error='';}catch(e){if(current!==selection)return;error=e.message;}
+    draw();schedule();
+  }
+  async function loadHistory(restore) {
+    try {const data=await api('?limit=20&offset='+offset);history=data.items;nextOffset=data.next_offset;error='';
+      if(restore && !job && history.length){await openJob(history[0].id);return;}
+    }catch(e){error=e.message;}
+    draw();
   }
   async function submit() {
+    ++selection;
     pending=true; error=''; requestKey ??= crypto.randomUUID(); draw();
     try {
       job=await api('', {method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':requestKey},body:JSON.stringify({dataset:'synthetic-london-dst-v1',strategy:'session-breakout-v0.1',symbol:'EUR_USD'})});
       requestKey=null;
     } catch(e) {error=e.message;}
     pending=false; draw(); schedule();
+    loadHistory(false);
   }
   async function cancel() {
     try {job=await api('/'+job.id+'/cancel',{method:'POST'});error='';} catch(e) {error=e.message;}
     draw();schedule();
   }
-  window.addEventListener('research:mount',()=>{draw();schedule();});
-  if(location.hash==='#research') {draw();schedule();}
+  window.addEventListener('research:mount',()=>{draw();schedule();loadHistory(true);});
+  if(location.hash==='#research') {draw();schedule();loadHistory(true);}
 })();

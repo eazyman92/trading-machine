@@ -62,3 +62,18 @@ def test_expired_worker_and_failure(store):
 def test_idempotency_configuration_conflict(store):
     key=str(uuid.uuid4());store.create(key,CONFIG)
     with pytest.raises(Conflict):store.create(key,CONFIG|{'symbol':'other'})
+
+def test_history_pagination_and_reopen(store):
+    ids=[store.create(str(uuid.uuid4()),CONFIG)['id'] for _ in range(3)]
+    assert process_one(store)
+    with TestClient(app) as client:
+        page=client.get('/api/v1/research/jobs?limit=2').json()
+        assert [j['id'] for j in page['items']]==list(reversed(ids))[0:2]
+        assert page['next_offset']==2
+        assert 'result' not in page['items'][0] and 'request_key' not in page['items'][0]
+        last=client.get('/api/v1/research/jobs?limit=2&offset=2').json()
+        assert last['items'][0]['id']==ids[0] and last['next_offset'] is None
+        reopened=client.get('/api/v1/research/jobs/'+ids[0]).json()
+        assert reopened['status']=='completed' and len(reopened['result']['trades'])==2
+        for query in ('limit=0','limit=101','offset=-1'):
+            assert client.get('/api/v1/research/jobs?'+query).status_code==422

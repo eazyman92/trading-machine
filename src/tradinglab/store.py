@@ -69,6 +69,13 @@ class Store:
             row = self.sql(conn, 'SELECT * FROM research_jobs WHERE id=?', (job_id,)).fetchone()
             return self.decode(row) if row else None
 
+    def list_jobs(self, limit=20, offset=0):
+        with self.connection() as conn:
+            rows = self.sql(conn, 'SELECT id,status,config,error,created_at,updated_at FROM research_jobs ORDER BY created_at DESC,id DESC LIMIT ? OFFSET ?', (limit+1, offset)).fetchall()
+            items = [dict(row) for row in rows[:limit]]
+            for item in items: item['config'] = json.loads(item['config'])
+            return {'items': items, 'next_offset': offset+limit if len(rows)>limit else None}
+
     def cancel(self, job_id):
         with self.connection() as conn:
             self.sql(conn, "UPDATE research_jobs SET status='cancelled',updated_at=?,lease_until=NULL WHERE id=? AND status IN ('queued','running')", (time.time(), job_id))

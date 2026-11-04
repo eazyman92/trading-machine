@@ -48,6 +48,7 @@ The schema is available at `/api/v1/openapi.json` and interactive documentation 
 - `GET /api/v1/health`: database readiness, 503 if unavailable.
 - `POST /api/v1/research/jobs`: JSON configuration, UUID `Idempotency-Key` header, 202 response with job ID/status. Same key/config returns the same job; a conflicting config returns 409.
 - `GET /api/v1/research/jobs/{uuid}`: status, configuration and completed result; 404 if absent.
+- `GET /api/v1/research/jobs?limit=20&offset=0`: newest-first saved summaries, up to 100 per page, with `next_offset`; full results are fetched separately. History uses offset pagination for this small development workspace and can shift if new jobs arrive between pages.
 - `POST /api/v1/research/jobs/{uuid}/cancel`: cancels queued/running work logically. Completed/failed/cancelled states remain unchanged. It does not stop a currently executing CPU calculation; its result is discarded if cancellation wins the state transition.
 
 Only `synthetic-london-dst-v1`, `session-breakout-v0.1` and `EUR_USD` are accepted. Extra fields are rejected. Terminal states are completed, failed and cancelled. A claimed job has a 60-second lease; another worker poll marks an expired run failed. This bounded fixture finishes well inside that lease. Longer research needs heartbeat/lease ownership and workload isolation before support is enabled.
