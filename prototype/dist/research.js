@@ -2,6 +2,7 @@
 (() => {
   let job = null, timer = null, pending = false, error = '', requestKey = null;
   let history = [], offset = 0, nextOffset = null, selection = 0;
+  let openingId = null;
   const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const terminal = () => job && ['completed','failed','cancelled'].includes(job.status);
   function draw() {
@@ -22,10 +23,30 @@
     saved.className='panel content-card';
     saved.innerHTML=`<h2>Saved research runs</h2><p class="muted">Saved in the development database. Select a run to reopen its results.</p><button class="btn secondary" id="refresh-history">Refresh history</button><div>${history.map(h=>`<p><button class="btn secondary" data-job-id="${escape(h.id)}">${escape(new Date(h.created_at*1000).toISOString())} · ${escape(h.status)} · ${escape(h.id.slice(0,8))}</button></p>`).join('') || '<p>No saved runs on this page.</p>'}</div><button class="btn secondary" id="history-prev" ${offset===0?'disabled':''}>Previous</button> <button class="btn secondary" id="history-next" ${nextOffset===null?'disabled':''}>Next</button>`;
     root.append(saved);
+    const selectionNotice=document.createElement('p');
+    selectionNotice.setAttribute('role','status');
+    selectionNotice.textContent=openingId ? 'Opening run '+openingId+'…' : job ? 'Selected run: '+job.id : 'Choose a saved run';
+    saved.insertBefore(selectionNotice,saved.querySelector('#refresh-history'));
+    if(result){
+      const resultPanel=root.querySelectorAll('section.panel')[1];
+      resultPanel.id='selected-research-result';
+      resultPanel.tabIndex=-1;
+      const identity=document.createElement('p');
+      identity.textContent='Results for run: '+job.id;
+      resultPanel.insertBefore(identity,resultPanel.children[1]);
+    }
     saved.querySelector('#refresh-history').onclick=()=>loadHistory(false);
     saved.querySelector('#history-prev').onclick=()=>{offset=Math.max(0,offset-20);loadHistory(false);};
     saved.querySelector('#history-next').onclick=()=>{offset=nextOffset;loadHistory(false);};
-    saved.querySelectorAll('[data-job-id]').forEach(b=>b.onclick=()=>openJob(b.dataset.jobId));
+    saved.querySelectorAll('[data-job-id]').forEach(b=>{
+      const selected=b.dataset.jobId===job?.id;
+      b.setAttribute('aria-pressed',String(selected));
+      b.classList.toggle('primary',selected);
+      b.classList.toggle('secondary',!selected);
+      if(selected)b.textContent+=' · Selected';
+      b.disabled=pending;
+      b.onclick=()=>openJob(b.dataset.jobId,true);
+    });
   }
   async function api(path, options) {
     const response = await fetch('/api/v1/research/jobs'+path, {...options, signal: AbortSignal.timeout(10000)});
@@ -42,10 +63,17 @@
     draw(); schedule();
     if(terminal())loadHistory(false);
   }
-  async function openJob(id) {
+  async function openJob(id, reveal=false) {
     const current=++selection; clearTimeout(timer);
+    openingId=id;error='';draw();
     try {const fetched=await api('/'+id);if(current!==selection)return;job=fetched;error='';}catch(e){if(current!==selection)return;error=e.message;}
+    openingId=null;
     draw();schedule();
+    if(reveal && !error){
+      const target=document.querySelector('#selected-research-result') || document.querySelector('#research-root');
+      target?.focus({preventScroll:true});
+      target?.scrollIntoView({behavior:'auto',block:'start'});
+    }
   }
   async function loadHistory(restore) {
     try {const data=await api('?limit=20&offset='+offset);history=data.items;nextOffset=data.next_offset;error='';
