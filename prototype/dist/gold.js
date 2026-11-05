@@ -8,9 +8,16 @@
     section.innerHTML='<h2>XAU/USD historical CSV research</h2><p>Import your permitted one-minute bid candles with a declared constant spread per candle. Contract settings must come from your chosen gold product. No broker defaults are assumed.</p><form><label class="field">CSV file (maximum 500 KB, 3,000 rows)<input type="file" accept=".csv,text/csv" required></label><p class="muted">Columns: time,bid_open,bid_high,bid_low,bid_close,spread. UTC bar-open timestamps. Full London 07:00–16:00 sessions required.</p><label class="field">Dataset source, period, rights and product reference<textarea name="provenance" minlength="10" maxlength="2000" required></textarea></label>'+fields.map(([k,label])=>`<label class="field">${label}<input name="${k}" type="number" step="any" min="${k.startsWith('commission')?'0':'0.00000001'}" required></label>`).join('')+'<label><input name="rights_confirmed" type="checkbox" required> I have permission to use this dataset for this research.</label><p class="muted">Intraday USD research only. No financing, broker margin or intratrade drawdown model. Fixed five-tick breakout buffer; not optimized for gold.</p><button class="btn primary" type="submit">Run XAU/USD replay</button><p role="status"></p></form>';
     root.insertBefore(section,root.firstChild.nextSibling);
     const form=section.querySelector('form');
+    form.noValidate=true;
+    form.querySelector('p[role=status]').setAttribute('data-gold-status','');
+    function status(text){
+      message=text;
+      const current=document.querySelector('#gold-import [data-gold-status]');
+      if(current)current.textContent=text;
+    }
     const strategy=document.createElement('fieldset');
     strategy.innerHTML='<legend>Research strategy rules</legend><p>These are hypotheses to test, not approved trading settings. Sessions stay fixed to London time.</p><label class="field">Breakout buffer (price ticks)<input name="buffer_ticks" type="number" min="0" max="10000" step="1" value="5" required></label><label class="field">Target / entry-to-stop price distance<input name="reward_multiple" type="number" min="0.25" max="10" step="0.25" value="2" required></label><label class="field">Maximum entry spread USD/oz (optional)<input name="max_spread_usd" type="number" min="0.00000001" max="100" step="any"></label>';
-    form.insertBefore(strategy,form.querySelector('button'));
+    form.insertBefore(strategy,form.querySelector('button[type=submit]'));
     form.querySelectorAll('p').forEach(p=>{if(p.textContent.includes('Fixed five-tick'))p.textContent='Intraday USD research only. No financing, broker margin or intratrade drawdown model. Strategy rule changes require independent evaluation before any promotion.';});
     const range=document.createElement('div');
     range.innerHTML='<label class="field">First London session date (optional)<input type="date" name="start_date"></label><label class="field">Last London session date (inclusive, optional)<input type="date" name="end_date"></label><button type="button" class="btn secondary" id="validate-gold">Preview dataset quality</button><div id="gold-quality" role="status"></div>';
@@ -30,15 +37,24 @@
     showQuality();
     form.addEventListener('change',e=>{if(e.target.type==='file'){preview=null;showQuality();}});
     for(const [key,value] of Object.entries(values)){if(form.elements[key]){if(key==='rights_confirmed')form.elements[key].checked=value;else form.elements[key].value=value;}}
-    form.querySelector('[role=status]').textContent=message;
-    form.querySelector('button').disabled=busy;
+    form.querySelector('[data-gold-status]').textContent=message;
+    form.querySelector('button[type=submit]').disabled=busy;
     form.querySelector('input[type=file]').required=!fileText;
     form.addEventListener('input',e=>{if(e.target.name)values[e.target.name]=e.target.type==='checkbox'?e.target.checked:e.target.value;if(['start_date','end_date'].includes(e.target.name)){preview=null;showQuality();}retryKey=null;});
-    form.querySelector('input[type=file]').onchange=async e=>{const file=e.target.files[0];if(!file)return;if(file.size>500000){message='File exceeds 500 KB';fileText='';}else{fileText=await file.text();message='Loaded '+file.name;}retryKey=null;form.querySelector('[role=status]').textContent=message;};
+    form.querySelector('input[type=file]').onchange=async e=>{const file=e.target.files[0];if(!file)return;if(file.size>500000){message='File exceeds 500 KB';fileText='';}else{fileText=await file.text();message='Loaded '+file.name;}retryKey=null;form.querySelector('[data-gold-status]').textContent=message;};
     form.onsubmit=async e=>{
-      e.preventDefault();if(busy)return;busy=true;retryKey??=crypto.randomUUID();
+      e.preventDefault();if(busy){status('A submission is already in progress. Please wait.');return;}
+      const invalid=[...form.elements].filter(el=>el.willValidate && !el.checkValidity());
+      if(invalid.length){
+        status('Check these fields: '+invalid.map(el=>el.labels?.[0]?.textContent.trim() || el.name || 'CSV file').join('; '));
+        invalid[0].focus();invalid[0].scrollIntoView({block:'center'});return;
+      }
+      if(!fileText){status('Choose a CSV and wait for the file to finish loading before submitting.');return;}
+      // Read the actual controls at submission rather than relying on input-event history.
+      for(const el of form.elements){if(el.name)values[el.name]=el.type==='checkbox'?el.checked:el.value;}
+      busy=true;retryKey??=crypto.randomUUID();
       const submittedKey=retryKey;
-      form.querySelector('button').disabled=true;form.querySelector('[role=status]').textContent='Submitting XAU/USD research…';
+      form.querySelector('button[type=submit]').disabled=true;form.querySelector('[data-gold-status]').textContent='Submitting XAU/USD research…';
       try{
         const body={csv_text:fileText,start_date:values.start_date||null,end_date:values.end_date||null,provenance:values.provenance,rights_confirmed:values.rights_confirmed===true,spec:Object.fromEntries(fields.map(([k])=>[k,values[k]]))};
         body.rules={buffer_ticks:Number(values.buffer_ticks??5),reward_multiple:values.reward_multiple||'2',max_spread_usd:values.max_spread_usd||null};
@@ -48,7 +64,7 @@
       }catch(err){
         if(err.name==='TimeoutError' || err.name==='AbortError' || err instanceof TypeError){
           message='Response interrupted. Checking whether your job was saved…';
-          form.querySelector('[role=status]').textContent=message;
+          form.querySelector('[data-gold-status]').textContent=message;
           try{
             const recovered=await fetch('/api/v1/research/requests/'+submittedKey,{signal:AbortSignal.timeout(10000)});
             if(recovered.ok){const job=await recovered.json();retryKey=null;busy=false;message='Recovered saved job: '+job.id;window.dispatchEvent(new CustomEvent('research:created',{detail:job}));return;}
@@ -56,7 +72,7 @@
           message='Submission outcome is not confirmed. Retry unchanged settings to reuse the same request key; do not create a new submission.';
         }else message=err.message;
         busy=false;const current=document.querySelector('#gold-import form');
-        if(current){current.querySelector('[role=status]').textContent=message;current.querySelector('button').disabled=false;}
+        if(current){current.querySelector('[data-gold-status]').textContent=message;current.querySelector('button[type=submit]').disabled=false;}
       }
     };
   }

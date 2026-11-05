@@ -151,6 +151,6 @@
     draw();schedule();
   }
   window.addEventListener('research:mount',()=>{draw();schedule();loadHistory(true);});
-  window.addEventListener('research:created',e=>{job=e.detail;error='';draw();schedule();loadHistory(false);});
+  window.addEventListener('research:created',e=>{job=e.detail;error='';draw();schedule();loadHistory(false);const target=document.querySelector('#selected-research-result') || document.querySelector('#research-root > section:not(#gold-import)');target?.scrollIntoView({block:'start'});});
   if(location.hash==='#research') {draw();schedule();loadHistory(true);}
 })();
