@@ -1,0 +1,17 @@
+{
+  "spec": {
+    "tick_usd": "0.001",
+    "ounces_per_lot": "100",
+    "lot_step": "0.01",
+    "minimum_lots": "0.01",
+    "commission_usd_per_lot_side": "7",
+    "risk_budget_usd": "25",
+    "notional_cap_usd": "10000"
+  },
+  "rules": {
+    "buffer_ticks": 5,
+    "reward_multiple": "2",
+    "max_spread_usd": null,
+    "slippage_ticks": 1
+  }
+}

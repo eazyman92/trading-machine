@@ -30,5 +30,7 @@ Run that SSH command on your own computer, substituting your key, instance user 
 - [Architecture](SYSTEM-BLUEPRINT.md): responsibilities and build/reuse decisions.
 - [Engineering requirements](ENGINEERING-REQUIREMENTS.md): execution, data and account controls.
 - [Gold research import](GOLD-RESEARCH.md): XAU/USD CSV format, contract assumptions, test sample and deployment steps.
+- [Actual market-data adapter](MARKET-DATA-ADAPTER.md): acquired provider sample, offline reproduction and qualification limits.
+- [Upstream strategy reproduction and EC2 acceptance](UPSTREAM-REPRODUCTION.md): exact reference parity, license, commands, inputs and expected results.
 
 Generated output, local dependencies, environment files and downloaded third-party research source snapshots are excluded from Git. Research notes and the source manifest remain included. No project-wide open-source license has been selected; third-party components retain their own licenses.

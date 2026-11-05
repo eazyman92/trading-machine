@@ -1,0 +1,2 @@
+# Preserve the exact reviewed upstream bytes used by the parity verifier.
+vendor/quant_trading/london_breakout_reference.py -text

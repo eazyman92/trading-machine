@@ -1,5 +1,7 @@
 # Historical XAU/USD source qualification receipt
 
+Update 5 November 2026: the earlier desk-review table below is superseded for **technical sample acquisition** by MARKET-DATA-ADAPTER.md. Ten actual hourly files (47,580 paired ticks / 600 minute projections) were downloaded, offline hashes reproduced, and isolated dataset/worker ingestion verified. Daily-reference scale sanity passed; exact provider quote confirmation and commercial rights remain unresolved. The table is retained as the initial qualification record, not current proof that no sample exists.
+
 Reviewed: 5 November 2026. No data account opened, agreement accepted, paid request made or real market dataset obtained during this increment.
 
 | Gate | Evidence | Status |
