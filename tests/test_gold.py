@@ -5,6 +5,8 @@ import pytest
 from fastapi.testclient import TestClient
 from tradinglab.api import app
 from tradinglab.gold import import_csv, run_gold
+from tradinglab.gold import prepare_dataset
+from tradinglab.comparison import compare
 from tradinglab.replay import fixture
 from tradinglab.store import Store
 from tradinglab.worker import process_one
@@ -33,6 +35,35 @@ def test_bad_gold_data():
     with pytest.raises(ValueError):import_csv(text+'\n'+text.splitlines()[-1])
     with pytest.raises(ValueError):import_csv(text.replace('2000','NaN'))
     with pytest.raises(ValueError):import_csv('time,price\n2026-03-27,2000')
+
+def test_preview_range_gaps_and_curve():
+    c=config()
+    bars,quality=prepare_dataset(c['csv_text'],'2026-03-27','2026-03-27')
+    assert len(bars)==541 and quality['eligible_sessions']==1
+    missing='\n'.join(c['csv_text'].splitlines()[:20]+c['csv_text'].splitlines()[21:])
+    assert prepare_dataset(missing)[1]['sessions'][0]['missing_session_minutes']==1
+    for start,end in [('2026-03-30','2026-03-27'),('2027-01-01',None)]:
+        with pytest.raises(ValueError):prepare_dataset(c['csv_text'],start,end)
+    result=run_gold(c)
+    assert result['closed_trade_curve'][-1]['cumulative_net_usd']==result['metrics']['net_usd']
+    assert result['closed_trade_curve'][-1]['drawdown_usd']==result['metrics']['closed_trade_drawdown_usd']
+
+def test_comparison_checks_and_discloses_cost_changes():
+    a=run_gold(config());c=config();c['spec']['commission_usd_per_lot_side']='14';b=run_gold(c)
+    left={'id':'left','status':'completed','result':a};right={'id':'right','status':'completed','result':b}
+    assert 'commission_usd_per_lot_side' in compare(left,right)['changed_settings']
+    b['dataset_sha256']='different'
+    with pytest.raises(ValueError):compare(left,right)
+    b['dataset_sha256']=a['dataset_sha256'];b['data_quality']['start_date']='2026-03-27'
+    with pytest.raises(ValueError):compare(left,right)
+
+def test_dataset_preview_api():
+    with TestClient(app) as client:
+        body={'csv_text':config()['csv_text'],'start_date':'2026-03-27','end_date':'2026-03-27'}
+        response=client.post('/api/v1/research/gold/validate',json=body)
+        assert response.status_code==200 and response.json()['eligible_sessions']==1
+        body['end_date']='2026-03-26'
+        assert client.post('/api/v1/research/gold/validate',json=body).status_code==422
 
 def test_gold_api_worker(tmp_path,monkeypatch):
     monkeypatch.setenv('DATABASE_URL','sqlite:///'+str(tmp_path/'gold.db'))

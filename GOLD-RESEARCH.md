@@ -38,6 +38,18 @@ Upload `output/gold-synthetic-import.csv`. State “Generated synthetic gold imp
 
 ## Deploy to EC2
 
+## Dataset preview, selected periods and comparison
+
+Use **Preview dataset quality** after selecting a file. The report shows total/selected rows, UTC coverage, spread bounds and complete/incomplete London sessions. Invalid duplicate, unordered, malformed or non-UTC input is rejected rather than repaired. Dates are inclusive Europe/London session dates, not UTC calendar boundaries; start/end fields are optional. A date range without candles is rejected. Date selection does not make an incomplete session eligible.
+
+New results retain `data_quality` and `closed_trade_curve`. Charts show cumulative realized net P&L and drawdown at trade closes, starting at zero; the horizontal axis is trade index. They are not full equity curves or mark-to-market risk measurements. Older reports remain unchanged; rerun them to obtain chart/quality metadata.
+
+**Compare saved gold runs** uses completed jobs from the current history page. It requires the exact same uploaded CSV hash and selected date range, exposes strategy versions and all changed contract/cost/risk inputs, and reports the candidate-minus-baseline net result. Changed sizing/cost settings confound any strategy comparison. Only the current breakout strategy is implemented; comparing two configurations does not create another strategy or constitute walk-forward/holdout validation.
+
+New API routes: `POST /api/v1/research/gold/validate` and `GET /api/v1/research/comparison?left=UUID&right=UUID`. Preview requires CSV text plus optional ISO start/end dates. No changes to existing database schema are needed; configuration and quality metadata are stored with each new job.
+
+The 3,000-row / 500 KB limit remains. File-backed long-history storage, worker heartbeats/progress and licensed feed qualification are separate outstanding work; this release does not claim large historical research is ready. Validation cannot establish source authenticity, licensing or market accuracy. Browser interaction verification remains pending; 22 local Python tests and frontend syntax checks pass.
+
 After committing/pushing locally:
 
 ```bash

@@ -66,10 +66,36 @@
       const cards=[['Net result after costs',usd(m.net_usd)],['Closed-trade drawdown',usd(m.closed_trade_drawdown_usd)],['Commission (included in net)',usd(m.commission_usd)],['Trades / win rate',String(m.trade_count??result.trades.length)+' / '+(m.win_rate==null?'N/A':(Number(m.win_rate)*100).toFixed(1)+'%')]];
       metrics.innerHTML=cards.map(([label,value])=>`<div class="stat"><div class="stat-label">${escape(label)}</div><div class="stat-value">${escape(value)}</div></div>`).join('');
       panel.insertBefore(metrics,panel.querySelector('table').parentElement);
+      if(result.closed_trade_curve){
+        const curves=document.createElement('section');
+        const series=result.closed_trade_curve;
+        function plot(field,title,color){
+          const points=series.map(p=>Number(p[field]));const lo=Math.min(0,...points),hi=Math.max(0,...points),span=hi-lo||1;
+          const coords=points.map((y,i)=>`${30+i*540/Math.max(1,points.length-1)},${130-(y-lo)*100/span}`).join(' ');
+          return `<h3>${title}</h3><svg viewBox="0 0 600 160" role="img" aria-label="${title}; trade index on horizontal axis, USD on vertical axis" style="width:100%;max-width:800px"><text x="30" y="16" fill="currentColor">USD ${hi.toFixed(2)} / ${lo.toFixed(2)}</text><polyline points="${coords}" fill="none" stroke="${color}" stroke-width="2"/><text x="30" y="155" fill="currentColor">Trade 0 → ${points.length-1}</text></svg>`;
+        }
+        curves.innerHTML='<p class="muted">Closed-trade P&amp;L only; excludes intratrade moves, deposits and account equity. Values between closes are unknown.</p>'+plot('cumulative_net_usd','Cumulative net P&L (USD)','#b7ef83')+plot('drawdown_usd','Closed-trade drawdown (USD)','#f2b47e');
+        panel.append(curves);
+      }
       if(!result.trades.length){const empty=document.createElement('p');empty.className='notice';empty.textContent=result.no_trade_explanation || 'No trades were recorded. This older report has no rejection diagnostics; rerun to collect them.';panel.insertBefore(empty,metrics.nextSibling);}
       if(Object.keys(result.sizing_rejections||{}).length){const diagnostics=document.createElement('p');diagnostics.textContent='Rejected sizing attempts (not unique signals): '+Object.entries(result.sizing_rejections).map(([k,v])=>k.replaceAll('_',' ')+': '+v).join('; ');panel.append(diagnostics);}
     }
     window.dispatchEvent(new Event('research:drawn'));
+    const goldRuns=history.filter(h=>h.status==='completed' && h.config.symbol==='XAU_USD');
+    const comparison=document.createElement('section');comparison.className='panel content-card';
+    const options=goldRuns.map(h=>`<option value="${escape(h.id)}">${escape(h.id.slice(0,8))} · ${escape(new Date(h.created_at*1000).toISOString())}</option>`).join('');
+    comparison.innerHTML=`<h2>Compare saved gold runs</h2><p>Choose two completed runs from the current history page. Exact CSV and date range must match. Contract/cost differences will be disclosed.</p><label class="field">Baseline<select id="compare-left">${options}</select></label><label class="field">Candidate<select id="compare-right">${options}</select></label><button class="btn secondary" ${goldRuns.length<2?'disabled':''}>Compare runs</button><div role="status"></div>`;
+    root.append(comparison);
+    comparison.querySelector('button').onclick=async()=>{
+      const output=comparison.querySelector('[role=status]');output.textContent='Comparing…';
+      try{
+        const query=new URLSearchParams({left:comparison.querySelector('#compare-left').value,right:comparison.querySelector('#compare-right').value});
+        const response=await fetch('/api/v1/research/comparison?'+query,{signal:AbortSignal.timeout(10000)});const report=await response.json();
+        if(!response.ok)throw new Error(report.detail||'Comparison failed');
+        output.replaceChildren();
+        for(const text of ['Baseline net USD: '+report.left_metrics.net_usd,'Candidate net USD: '+report.right_metrics.net_usd,'Candidate minus baseline USD: '+report.net_delta_usd,'Baseline strategy: '+report.left_strategy+'; candidate: '+report.right_strategy,...Object.entries(report.changed_settings).map(([k,v])=>k.replaceAll('_',' ')+': '+v.left+' → '+v.right),report.warning]){const p=document.createElement('p');p.textContent=text;output.append(p);}
+      }catch(err){output.textContent=err.message;}
+    };
   }
   async function api(path, options) {
     const response = await fetch('/api/v1/research/jobs'+path, {...options, signal: AbortSignal.timeout(10000)});

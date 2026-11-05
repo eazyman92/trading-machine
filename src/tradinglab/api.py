@@ -4,6 +4,7 @@ from uuid import UUID
 from fastapi import FastAPI, Header, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
 from decimal import Decimal
+from datetime import date
 from tradinglab.store import Store, Conflict
 
 app = FastAPI(title='Trading research API', version='0.1.0', openapi_url='/api/v1/openapi.json', docs_url='/api/v1/docs', redoc_url=None)
@@ -24,18 +25,28 @@ class GoldSpec(BaseModel):
     risk_budget_usd: Decimal = Field(gt=0,le=100000)
     notional_cap_usd: Decimal = Field(gt=0,le=10000000)
 
-class GoldRequest(BaseModel):
+class DatasetRequest(BaseModel):
     model_config=ConfigDict(extra='forbid')
     csv_text: str = Field(min_length=1,max_length=500000)
+    start_date: date | None = None
+    end_date: date | None = None
+
+@app.post('/api/v1/research/gold/validate')
+def validate_gold_dataset(body: DatasetRequest):
+    from tradinglab.gold import prepare_dataset
+    try:return prepare_dataset(body.csv_text,body.start_date,body.end_date)[1]
+    except (ValueError,ArithmeticError,TypeError,KeyError) as exc:raise HTTPException(422,'Invalid CSV/date range: '+str(exc))
+
+class GoldRequest(DatasetRequest):
     provenance: str = Field(min_length=10,max_length=2000)
     rights_confirmed: Literal[True]
     spec: GoldSpec
 
 @app.post('/api/v1/research/gold/jobs',status_code=202)
 def create_gold(body: GoldRequest,idempotency_key: UUID=Header()):
-    from tradinglab.gold import import_csv
+    from tradinglab.gold import prepare_dataset
     try:
-        import_csv(body.csv_text)
+        prepare_dataset(body.csv_text,body.start_date,body.end_date)
         if body.spec.minimum_lots % body.spec.lot_step != 0: raise ValueError('Minimum lots must be a multiple of lot step')
     except (ValueError,ArithmeticError,TypeError,KeyError): raise HTTPException(422,'Invalid CSV or contract settings; check UTC timestamps, finite positive OHLC/spread, ordering and row limit')
     config=body.model_dump(mode='json') | {'symbol':'XAU_USD','strategy':'gold-session-breakout-v0.1','dataset':'user-csv-v1'}
@@ -47,6 +58,14 @@ def health():
     try: Store().health()
     except Exception: raise HTTPException(503, 'Research database unavailable')
     return {'status': 'ok', 'mode': 'local-synthetic-research'}
+
+@app.get('/api/v1/research/comparison')
+def compare_jobs(left: UUID,right: UUID):
+    from tradinglab.comparison import compare
+    a,b=Store().get(str(left)),Store().get(str(right))
+    if not a or not b:raise HTTPException(404,'Research job not found')
+    try:return compare(a,b)
+    except ValueError as exc:raise HTTPException(422,str(exc))
 
 @app.get('/api/v1/research/requests/{request_key}')
 def recover_request(request_key: UUID):
