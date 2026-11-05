@@ -44,6 +44,8 @@ Local synthetic development may precede identity; no public deployment or multi-
 
 ## Completion record
 
+5 November 2026 — Strategy-engine research increment: gold v0.2 adds configurable breakout buffer, reward multiple and maximum-entry-spread filter, deterministic configuration fingerprint, research-only status and rule-derived per-trade entry/risk evidence. Saved comparisons disclose rule changes. Twenty-three Python tests pass and frontend syntax checks pass. No historical-data qualification, LLM, broker submission or live approval added. Interactive browser verification remains pending.
+
 5 November 2026 — Dataset preview/research charts increment: added strict CSV preview with row/coverage/spread/session completeness, optional inclusive London session date range, stored closed-trade P&L/drawdown series and dashboard charts, and descriptive saved-run comparison enforcing exact CSV/date-range match and exposing changed settings. Twenty-two Python tests pass; JS syntax checks pass. No qualified market dataset or large-history storage added; existing 3,000-row/500 KB bound and unverified data status remain. Browser/EC2 interaction checks are pending.
 
 5 November 2026 — Research result clarity/recovery: added USD metric cards, win-rate N/A for no trades, gold-specific selected-job labels and quantity headers, sizing rejection explanations, and request-key lookup after interrupted gold submission. Nineteen Python tests pass; syntax checks pass. Recovery tests model a lost response by retrieving/retrying the original key and checking exactly one stored job. Browser/network interruption interaction and EC2 deployment remain unverified.

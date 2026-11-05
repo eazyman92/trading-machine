@@ -36,7 +36,7 @@ def size(entry, stop, budget=D("25")):
     return max(0, min(10000, int((budget / per_unit).to_integral_value(rounding=ROUND_FLOOR)),
                       int((D("10000") / entry).to_integral_value(rounding=ROUND_FLOOR))))
 
-def replay(bars, tick=TICK, fee=FEE, sizing=size):
+def replay(bars, tick=TICK, fee=FEE, sizing=size, buffer_ticks=5, reward_multiple=D('2'), max_spread=None):
     TICK, FEE = tick, fee
     if any(a.time >= b.time for a, b in zip(bars, bars[1:])):
         raise ValueError("timestamps must be strictly increasing; duplicates rejected")
@@ -44,6 +44,7 @@ def replay(bars, tick=TICK, fee=FEE, sizing=size):
     for bar in bars:
         groups.setdefault(bar.time.astimezone(LONDON).date(), []).append(bar)
     trades, rejected = [], []
+    spread_rejections=0
     for day, daily in groups.items():
         start = datetime(day.year, day.month, day.day, 7, tzinfo=LONDON).astimezone(timezone.utc)
         expected = [start + timedelta(minutes=i) for i in range(541)]
@@ -60,8 +61,11 @@ def replay(bars, tick=TICK, fee=FEE, sizing=size):
             # Previous bar is complete at this bar's open: no same-bar fill.
             if position is None and 61 <= i <= 180:
                 mid = previous.bid_close + previous.spread / 2
-                side = 1 if mid > high + 5*TICK else -1 if mid < low - 5*TICK else 0
+                side = 1 if mid > high + buffer_ticks*TICK else -1 if mid < low - buffer_ticks*TICK else 0
                 if side:
+                    if max_spread is not None and bar.spread>max_spread:
+                        spread_rejections+=1
+                        continue
                     entry = bar.bid_open + bar.spread + TICK if side == 1 else bar.bid_open - TICK
                     stop = low if side == 1 else high
                     if side * (entry-stop) <= 0:
@@ -69,7 +73,12 @@ def replay(bars, tick=TICK, fee=FEE, sizing=size):
                     units = sizing(entry, stop)
                     if units <= 0:
                         continue
-                    position = (side, entry, stop, entry + side*2*abs(entry-stop), units, bar.time, previous.time+timedelta(minutes=1))
+                    evidence={'rule':'completed_close_above_range' if side==1 else 'completed_close_below_range',
+                              'range_high':str(high),'range_low':str(low),'signal_mid_close':str(mid),
+                              'signal_bar_open_utc':previous.time.isoformat(),'buffer_price':str(buffer_ticks*TICK),
+                              'entry_quote_spread':str(bar.spread),'reward_multiple':str(reward_multiple),
+                              'estimated_stop_risk_usd':str((abs(entry-stop)+TICK+2*FEE)*units)}
+                    position = (side, entry, stop, entry + side*reward_multiple*abs(entry-stop), units, bar.time, previous.time+timedelta(minutes=1))
             if position is None:
                 continue
             side, entry, stop, target, units, entered, signal = position
@@ -97,9 +106,9 @@ def replay(bars, tick=TICK, fee=FEE, sizing=size):
                                "signal_at": signal.isoformat(), "entry_at": entered.isoformat(),
                                "exit_bar_at": bar.time.isoformat(), "units": units,
                                "entry": str(entry), "stop": str(stop), "target": str(target),
-                               "exit": str(exit_price), "net_usd": str(pnl), "reason": reason})
+                               "exit": str(exit_price), "net_usd": str(pnl), "reason": reason,'signal_evidence':evidence})
                 break  # At most one entry per instrument/session.
-    return {"data_kind": "synthetic_fixture", "trades": trades, "rejected_sessions": rejected}
+    return {"data_kind": "synthetic_fixture", "trades": trades, "rejected_sessions": rejected,'spread_rejected_attempts':spread_rejections}
 
 def fixture():
     bars = []

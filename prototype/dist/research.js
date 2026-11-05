@@ -79,6 +79,12 @@
       }
       if(!result.trades.length){const empty=document.createElement('p');empty.className='notice';empty.textContent=result.no_trade_explanation || 'No trades were recorded. This older report has no rejection diagnostics; rerun to collect them.';panel.insertBefore(empty,metrics.nextSibling);}
       if(Object.keys(result.sizing_rejections||{}).length){const diagnostics=document.createElement('p');diagnostics.textContent='Rejected sizing attempts (not unique signals): '+Object.entries(result.sizing_rejections).map(([k,v])=>k.replaceAll('_',' ')+': '+v).join('; ');panel.append(diagnostics);}
+      if(result.strategy_config){
+        const evidence=document.createElement('section');
+        const title=document.createElement('h3');title.textContent='Why these trades were taken';evidence.append(title);
+        for(const t of result.trades){const p=document.createElement('p'),s=t.signal_evidence;p.textContent=s?`${t.session}: ${t.side} — completed midpoint close ${s.signal_mid_close} broke the ${s.range_low}–${s.range_high} range with a ${s.buffer_price} buffer. Next-bar entry ${t.entry}, stop ${t.stop}, target ${t.target}; estimated stop risk $${s.estimated_stop_risk_usd}. Exit: ${t.reason}.`:'Decision evidence unavailable in this older run.';evidence.append(p);}
+        const version=document.createElement('p');version.textContent='Research-only strategy configuration: '+result.strategy_config_sha256;evidence.append(version);panel.append(evidence);
+      }
     }
     window.dispatchEvent(new Event('research:drawn'));
     const goldRuns=history.filter(h=>h.status==='completed' && h.config.symbol==='XAU_USD');

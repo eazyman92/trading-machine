@@ -2,6 +2,7 @@
 import csv
 import hashlib
 import io
+import json
 from datetime import datetime, timezone, date, timedelta
 from decimal import Decimal as D, ROUND_FLOOR, InvalidOperation
 from tradinglab.replay import Bar, replay, LONDON
@@ -66,7 +67,10 @@ def run_gold(config):
             sizing_rejections[reason]=sizing_rejections.get(reason,0)+1
             return D(0)
         return lots*ounces
-    result=replay(bars,tick=tick,fee=commission/ounces,sizing=sizing)
+    rules={'buffer_ticks':5,'reward_multiple':'2','max_spread_usd':None} | config.get('rules',{})
+    reward=D(str(rules['reward_multiple']))
+    spread=D(str(rules['max_spread_usd'])) if rules['max_spread_usd'] is not None else None
+    result=replay(bars,tick=tick,fee=commission/ounces,sizing=sizing,buffer_ticks=rules['buffer_ticks'],reward_multiple=reward,max_spread=spread)
     result['data_kind']='user_supplied_unverified'
     equity=D(0);peak=D(0);drawdown=D(0);wins=0;fees=D(0)
     curve=[{'trade':0,'cumulative_net_usd':'0','drawdown_usd':'0','time':None}]
@@ -83,8 +87,13 @@ def run_gold(config):
     result['no_trade_explanation']=None if n else (
         'Minimum trade size exceeded the notional cap or estimated risk budget; inspect sizing rejections.' if sizing_rejections else
         'All sessions were excluded because data was incomplete or the session was closed.' if result['rejected_sessions'] else
+        'Entry spread exceeded the configured maximum.' if result['spread_rejected_attempts'] else
         'No eligible breakout entry was found under the configured rules.')
-    result.update(symbol='XAU_USD',strategy_version='gold-session-breakout-v0.1',bar_count=len(bars),
+    rules={'buffer_ticks':rules['buffer_ticks'],'reward_multiple':str(reward),'max_spread_usd':str(spread) if spread is not None else None}
+    strategy_record={'engine':'gold-session-breakout-v0.2','rules':rules,'timezone':'Europe/London','range':'07:00-08:00','entry_window':'08:00-10:00','flat_at':'16:00','max_entries_per_session':1}
+    strategy_hash=hashlib.sha256(json.dumps(strategy_record,sort_keys=True).encode()).hexdigest()
+    result.update(symbol='XAU_USD',strategy_version='gold-session-breakout-v0.2',strategy_config=strategy_record,strategy_config_sha256=strategy_hash,
+                  promotion_status='research_only',bar_count=len(bars),
                   dataset_sha256=hashlib.sha256(config['csv_text'].encode()).hexdigest(),
                   provenance=config['provenance'],contract_spec=spec,data_quality=quality,closed_trade_curve=curve,
                   cost_model='User-declared constant intra-candle spread, one adverse tick per fill, per-lot commission',

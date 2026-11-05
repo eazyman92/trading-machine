@@ -37,10 +37,17 @@ def validate_gold_dataset(body: DatasetRequest):
     try:return prepare_dataset(body.csv_text,body.start_date,body.end_date)[1]
     except (ValueError,ArithmeticError,TypeError,KeyError) as exc:raise HTTPException(422,'Invalid CSV/date range: '+str(exc))
 
+class StrategyRules(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+    buffer_ticks: int=Field(default=5,ge=0,le=10000,strict=True)
+    reward_multiple: Decimal=Field(default=Decimal('2'),ge=Decimal('.25'),le=10)
+    max_spread_usd: Decimal | None=Field(default=None,gt=0,le=100)
+
 class GoldRequest(DatasetRequest):
     provenance: str = Field(min_length=10,max_length=2000)
     rights_confirmed: Literal[True]
     spec: GoldSpec
+    rules: StrategyRules=Field(default_factory=StrategyRules)
 
 @app.post('/api/v1/research/gold/jobs',status_code=202)
 def create_gold(body: GoldRequest,idempotency_key: UUID=Header()):

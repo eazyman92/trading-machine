@@ -30,6 +30,23 @@ def test_gold_contract_costs_and_lot_floor():
     assert result['data_kind']=='user_supplied_unverified'
     assert result['metrics']['trade_count']==1
 
+def test_versioned_strategy_rules_and_decision_evidence():
+    c=config();baseline=run_gold(c)
+    evidence=baseline['trades'][0]['signal_evidence']
+    assert evidence['rule']=='completed_close_above_range'
+    assert D(evidence['estimated_stop_risk_usd'])<=D('25')
+    assert baseline['promotion_status']=='research_only'
+    assert baseline['strategy_config_sha256']==run_gold(c)['strategy_config_sha256']
+    c['rules']={'buffer_ticks':1000,'reward_multiple':'2','max_spread_usd':None}
+    candidate=run_gold(c)
+    assert not candidate['trades']
+    assert baseline['strategy_config_sha256']!=candidate['strategy_config_sha256']
+    report=compare({'id':'a','status':'completed','result':baseline},{'id':'b','status':'completed','result':candidate})
+    assert 'buffer_ticks' in report['changed_rules']
+    c['rules']={'buffer_ticks':5,'reward_multiple':'2','max_spread_usd':'.10'}
+    spread=run_gold(c)
+    assert not spread['trades'] and spread['spread_rejected_attempts']>0
+
 def test_bad_gold_data():
     text=config()['csv_text']
     with pytest.raises(ValueError):import_csv(text+'\n'+text.splitlines()[-1])
