@@ -9,7 +9,7 @@
     const root = document.querySelector('#research-root');
     if (!root) return;
     const result = job?.result;
-    root.innerHTML = `<div class="page-heading"><div><div class="eyebrow">BACKEND-CONNECTED RESEARCH</div><h1>Research lab</h1><p class="muted">Run a reproducible test and inspect the actual worker output.</p></div></div>
+    root.innerHTML = `<div class="page-heading"><div><div class="eyebrow">BACKEND-CONNECTED RESEARCH · GOLD IMPORT 2</div><h1>Research lab</h1><p class="muted">Run a reproducible test and inspect the actual worker output.</p></div></div>
       <div class="notice">Synthetic engineering fixtures only. These results do not measure historical profitability. No broker or AI is connected.</div>
       <section class="panel content-card"><h2>London session breakout v0.1</h2><p>EUR/USD · one-minute synthetic bid/ask candles · two sessions spanning the London DST change.</p><p class="muted">Fixed fixture: $25 estimated risk budget, $10,000 notional cap, spread, fees and adverse slippage. Parameters are locked for this first integration.</p>
       <button class="btn primary" id="run-research" ${pending || (job && !terminal()) ? 'disabled' : ''}>${pending ? 'Submitting…' : requestKey && !job ? 'Retry submission' : 'Run synthetic backtest'}</button>
