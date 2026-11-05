@@ -1,7 +1,7 @@
 """Loopback development API. Not authenticated or suitable for public exposure."""
 from typing import Literal
 from uuid import UUID
-from fastapi import FastAPI, Header, HTTPException, Query
+from fastapi import FastAPI, Header, HTTPException, Query, Request
 from pydantic import BaseModel, ConfigDict, Field
 from decimal import Decimal
 from datetime import date
@@ -48,6 +48,70 @@ class GoldRequest(DatasetRequest):
     rights_confirmed: Literal[True]
     spec: GoldSpec
     rules: StrategyRules=Field(default_factory=StrategyRules)
+
+class DatasetMetadata(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+    csv_text: str=Field(min_length=1,max_length=20_000_000)
+    source: str=Field(min_length=10,max_length=2000)
+    rights_reference: str=Field(min_length=10,max_length=2000)
+    rights_confirmed: Literal[True]
+
+@app.post('/api/v1/research/datasets',status_code=201)
+async def register_dataset(request: Request):
+    # Bound the body while streaming, before JSON decoding/validation.
+    data=bytearray()
+    async for chunk in request.stream():
+        data.extend(chunk)
+        if len(data)>23_000_000:raise HTTPException(413,'Upload exceeds 23 MB request limit')
+    try:
+        body=DatasetMetadata.model_validate_json(data)
+    except ValueError:raise HTTPException(422,'Invalid dataset registration fields')
+    from tradinglab.datasets import register
+    from starlette.concurrency import run_in_threadpool
+    try:return await run_in_threadpool(register,body.csv_text,body.source,body.rights_reference)
+    except (ValueError,ArithmeticError,TypeError,KeyError):raise HTTPException(422,'Dataset rejected: check format, UTC ordering, 20 MB / 200000-row limits')
+
+@app.get('/api/v1/research/datasets')
+def dataset_list():
+    from tradinglab.datasets import list_datasets
+    return {'items':list_datasets()}
+
+@app.get('/api/v1/research/datasets/{dataset_id}/split-plan')
+def dataset_split(dataset_id: str):
+    from tradinglab.datasets import split_plan
+    try:return split_plan(dataset_id)
+    except FileNotFoundError:raise HTTPException(404,'Dataset not found')
+    except ValueError as exc:raise HTTPException(422,str(exc))
+
+@app.get('/api/v1/research/datasets/{dataset_id}/quality')
+def dataset_quality(dataset_id: str,start_date: date | None=None,end_date: date | None=None):
+    from tradinglab.datasets import read,MAX_ROWS
+    from tradinglab.gold import prepare_dataset
+    try:return prepare_dataset(read(dataset_id),start_date,end_date,max_rows=MAX_ROWS)[1]
+    except FileNotFoundError:raise HTTPException(404,'Dataset not found')
+    except (ValueError,ArithmeticError) as exc:raise HTTPException(422,str(exc))
+
+class StoredGoldRequest(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+    dataset_id: str=Field(pattern='^[a-f0-9]{64}$')
+    start_date: date | None=None
+    end_date: date | None=None
+    spec: GoldSpec
+    rules: StrategyRules=Field(default_factory=StrategyRules)
+
+@app.post('/api/v1/research/gold/stored-jobs',status_code=202)
+def create_stored_gold(body: StoredGoldRequest,idempotency_key: UUID=Header()):
+    from tradinglab.datasets import describe,read,MAX_ROWS
+    from tradinglab.gold import prepare_dataset
+    try:
+        metadata=describe(body.dataset_id)
+        prepare_dataset(read(body.dataset_id),body.start_date,body.end_date,max_rows=MAX_ROWS)
+        if body.spec.minimum_lots % body.spec.lot_step != 0:raise ValueError('Invalid lot step')
+    except FileNotFoundError:raise HTTPException(404,'Dataset not found')
+    except (ValueError,ArithmeticError):raise HTTPException(422,'Invalid dataset, date range or lot step')
+    config=body.model_dump(mode='json') | {'symbol':'XAU_USD','strategy':'gold-session-breakout-v0.2','dataset':'stored-csv-v1','provenance':metadata['source']+'; rights: '+metadata['rights_reference']}
+    try:return Store().create(str(idempotency_key),config)
+    except Conflict as exc:raise HTTPException(409,str(exc))
 
 @app.post('/api/v1/research/gold/jobs',status_code=202)
 def create_gold(body: GoldRequest,idempotency_key: UUID=Header()):

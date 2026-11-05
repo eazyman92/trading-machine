@@ -3,6 +3,7 @@ x-backend: &backend
   build: .
   environment:
     DATABASE_URL: postgresql://research:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/research
+    DATASET_DIR: /data/datasets
   restart: unless-stopped
 services:
   db:
@@ -31,6 +32,7 @@ services:
     command: [python, -m, uvicorn, tradinglab.api:app, --host, 0.0.0.0, --port, '8000', --reload]
     volumes:
       - ./src:/app/src:ro
+      - research-datasets:/data/datasets
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -44,6 +46,7 @@ services:
     command: [python, -m, tradinglab.worker]
     volumes:
       - ./src:/app/src:ro
+      - research-datasets:/data/datasets
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -60,3 +63,4 @@ services:
     restart: unless-stopped
 volumes:
   research-db:
+  research-datasets:

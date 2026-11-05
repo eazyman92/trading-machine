@@ -9,12 +9,12 @@ from tradinglab.replay import Bar, replay, LONDON
 
 FIELDS = ['time','bid_open','bid_high','bid_low','bid_close','spread']
 
-def import_csv(text):
+def import_csv(text,max_rows=3000):
     reader=csv.DictReader(io.StringIO(text))
     if reader.fieldnames != FIELDS: raise ValueError('CSV columns must be: '+','.join(FIELDS))
     bars=[]
     for row in reader:
-        if len(bars)>=3000: raise ValueError('Maximum 3000 candles per research run')
+        if len(bars)>=max_rows: raise ValueError('Maximum '+str(max_rows)+' candles per research run')
         timestamp=datetime.fromisoformat(row['time'].replace('Z','+00:00'))
         if timestamp.tzinfo is None: raise ValueError('UTC offset required')
         if timestamp.utcoffset().total_seconds()!=0: raise ValueError('CSV timestamps must be UTC')
@@ -26,17 +26,18 @@ def import_csv(text):
     if any(a.time>=b.time for a,b in zip(bars,bars[1:])): raise ValueError('Duplicate or unordered timestamps')
     return bars
 
-def prepare_dataset(text, start_date=None, end_date=None):
-    bars=import_csv(text)
+def prepare_dataset(text, start_date=None, end_date=None,max_rows=3000):
+    bars=import_csv(text,max_rows=max_rows)
     start=date.fromisoformat(str(start_date)) if start_date else None
     end=date.fromisoformat(str(end_date)) if end_date else None
     if start and end and start>end: raise ValueError('Start date must precede end date')
     chosen=[b for b in bars if (not start or b.time.astimezone(LONDON).date()>=start) and (not end or b.time.astimezone(LONDON).date()<=end)]
     if not chosen: raise ValueError('No candles in selected London date range')
     sessions=[]
-    for day in sorted({b.time.astimezone(LONDON).date() for b in chosen}):
+    grouped={}
+    for b in chosen:grouped.setdefault(b.time.astimezone(LONDON).date(),set()).add(b.time)
+    for day,present in sorted(grouped.items()):
         first=datetime(day.year,day.month,day.day,7,tzinfo=LONDON).astimezone(timezone.utc)
-        present={b.time for b in chosen if b.time.astimezone(LONDON).date()==day}
         missing=sum(first+timedelta(minutes=i) not in present for i in range(541))
         sessions.append({'date':str(day),'missing_session_minutes':missing,'eligible':day.weekday()<5 and missing==0})
     report={'data_kind':'user_supplied_unverified','input_rows':len(bars),'selected_rows':len(chosen),
@@ -50,8 +51,13 @@ def prepare_dataset(text, start_date=None, end_date=None):
             'warning':'Format validation does not verify market authenticity, rights, price accuracy or broker suitability.'}
     return chosen,report
 
-def run_gold(config):
-    bars,quality=prepare_dataset(config['csv_text'],config.get('start_date'),config.get('end_date'))
+def run_gold(config,progress=None):
+    text=config.get('csv_text')
+    if config.get('dataset_id'):
+        from tradinglab.datasets import read
+        text=read(config['dataset_id'])
+    if progress:progress('validating',0,1)
+    bars,quality=prepare_dataset(text,config.get('start_date'),config.get('end_date'),max_rows=200000 if config.get('dataset_id') else 3000)
     spec=config['spec']
     tick, ounces, step, minimum, commission, budget, cap = (D(spec[k]) for k in
         ('tick_usd','ounces_per_lot','lot_step','minimum_lots','commission_usd_per_lot_side','risk_budget_usd','notional_cap_usd'))
@@ -70,7 +76,7 @@ def run_gold(config):
     rules={'buffer_ticks':5,'reward_multiple':'2','max_spread_usd':None} | config.get('rules',{})
     reward=D(str(rules['reward_multiple']))
     spread=D(str(rules['max_spread_usd'])) if rules['max_spread_usd'] is not None else None
-    result=replay(bars,tick=tick,fee=commission/ounces,sizing=sizing,buffer_ticks=rules['buffer_ticks'],reward_multiple=reward,max_spread=spread)
+    result=replay(bars,tick=tick,fee=commission/ounces,sizing=sizing,buffer_ticks=rules['buffer_ticks'],reward_multiple=reward,max_spread=spread,progress=progress)
     result['data_kind']='user_supplied_unverified'
     equity=D(0);peak=D(0);drawdown=D(0);wins=0;fees=D(0)
     curve=[{'trade':0,'cumulative_net_usd':'0','drawdown_usd':'0','time':None}]
@@ -94,7 +100,7 @@ def run_gold(config):
     strategy_hash=hashlib.sha256(json.dumps(strategy_record,sort_keys=True).encode()).hexdigest()
     result.update(symbol='XAU_USD',strategy_version='gold-session-breakout-v0.2',strategy_config=strategy_record,strategy_config_sha256=strategy_hash,
                   promotion_status='research_only',bar_count=len(bars),
-                  dataset_sha256=hashlib.sha256(config['csv_text'].encode()).hexdigest(),
+                  dataset_sha256=hashlib.sha256(text.encode()).hexdigest(),
                   provenance=config['provenance'],contract_spec=spec,data_quality=quality,closed_trade_curve=curve,
                   cost_model='User-declared constant intra-candle spread, one adverse tick per fill, per-lot commission',
                   metrics={'net_usd':str(equity),'closed_trade_drawdown_usd':str(drawdown),'commission_usd':str(fees),

@@ -104,6 +104,15 @@ class Store:
             self.sql(conn, "UPDATE research_jobs SET status=?,result=?,error=?,updated_at=?,lease_until=NULL WHERE id=? AND status='running' AND lease_until>=?",
                      ('failed' if error else 'completed', json.dumps(result) if result else None, error, time.time(), job_id, time.time()))
 
+    def heartbeat(self,job_id,progress=None):
+        now=time.time()
+        with self.connection() as conn:
+            if progress is None:
+                cursor=self.sql(conn,"UPDATE research_jobs SET lease_until=? WHERE id=? AND status='running' AND lease_until>=?",(now+60,job_id,now))
+            else:
+                cursor=self.sql(conn,"UPDATE research_jobs SET lease_until=?,updated_at=?,result=? WHERE id=? AND status='running' AND lease_until>=?",(now+60,now,json.dumps({'progress':progress}),job_id,now))
+            return cursor.rowcount==1
+
 if __name__ == '__main__':
     Store().migrate()
     print('Research schema initialized')

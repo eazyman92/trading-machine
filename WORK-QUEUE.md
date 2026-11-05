@@ -44,6 +44,8 @@ Local synthetic development may precede identity; no public deployment or multi-
 
 ## Completion record
 
+5 November 2026 — Historical research infrastructure: persistent content-addressed dataset library (20 MB / 200,000 candles), shared Compose dataset volume, reference-only stored jobs, integrity checks, worker progress/heartbeat, cancellation-safe completion, and chronological 60/20/20 plan generation. Thirty Python tests pass; source qualification receipt added. Actual permitted market sample, gold binary scale, commercial usage terms and real-data evaluation remain unresolved; see DATASET-LIBRARY.md and research/DATA-QUALIFICATION.md. No external data was silently substituted or claimed qualified.
+
 5 November 2026 — Real-data preparation increment: reviewed official Dukascopy historical export/docs as a qualification candidate (no commercial rights established). Added strict normalized UTC bid/ask tick-to-candle preparation with source/output hashes and gap statistics, no silent filling, and explicit first-observed-spread approximation. Real data remains unverified and must be owner-supplied with permission; no dataset downloaded or bundled. Existing 3000-row bound remains. See REAL-DATA.md.
 
 5 November 2026 — Strategy-engine research increment: gold v0.2 adds configurable breakout buffer, reward multiple and maximum-entry-spread filter, deterministic configuration fingerprint, research-only status and rule-derived per-trade entry/risk evidence. Saved comparisons disclose rule changes. Twenty-three Python tests pass and frontend syntax checks pass. No historical-data qualification, LLM, broker submission or live approval added. Interactive browser verification remains pending.

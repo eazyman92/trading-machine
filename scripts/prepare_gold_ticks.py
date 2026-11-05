@@ -15,8 +15,8 @@ if __name__=='__main__':
     p.add_argument('--rights-reference',required=True,help='Recorded permission/terms reference for your research use')
     args=p.parse_args()
     data,manifest=convert(args.input.read_text(encoding='utf-8-sig'))
-    if manifest['minute_count']>3000 or len(data.encode())>500000:
-        raise SystemExit('Export a shorter period: dashboard currently accepts at most 3000 candles / 500 KB. No silent truncation performed.')
+    if manifest['minute_count']>200000 or len(data.encode())>20000000:
+        raise SystemExit('Export a shorter period: dataset library accepts at most 200000 candles / 20 MB. No silent truncation performed.')
     manifest.update(source=args.source,rights_reference=args.rights_reference,data_kind='user_supplied_unverified')
     args.output.parent.mkdir(parents=True,exist_ok=True)
     with args.output.open('x',encoding='utf-8',newline='') as f:f.write(data)

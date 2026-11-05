@@ -36,7 +36,7 @@ def size(entry, stop, budget=D("25")):
     return max(0, min(10000, int((budget / per_unit).to_integral_value(rounding=ROUND_FLOOR)),
                       int((D("10000") / entry).to_integral_value(rounding=ROUND_FLOOR))))
 
-def replay(bars, tick=TICK, fee=FEE, sizing=size, buffer_ticks=5, reward_multiple=D('2'), max_spread=None):
+def replay(bars, tick=TICK, fee=FEE, sizing=size, buffer_ticks=5, reward_multiple=D('2'), max_spread=None,progress=None):
     TICK, FEE = tick, fee
     if any(a.time >= b.time for a, b in zip(bars, bars[1:])):
         raise ValueError("timestamps must be strictly increasing; duplicates rejected")
@@ -45,7 +45,8 @@ def replay(bars, tick=TICK, fee=FEE, sizing=size, buffer_ticks=5, reward_multipl
         groups.setdefault(bar.time.astimezone(LONDON).date(), []).append(bar)
     trades, rejected = [], []
     spread_rejections=0
-    for day, daily in groups.items():
+    for session_index,(day, daily) in enumerate(groups.items()):
+        if progress:progress('replaying',session_index,len(groups))
         start = datetime(day.year, day.month, day.day, 7, tzinfo=LONDON).astimezone(timezone.utc)
         expected = [start + timedelta(minutes=i) for i in range(541)]
         by_time = {b.time: b for b in daily}
