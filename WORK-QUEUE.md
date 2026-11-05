@@ -44,6 +44,8 @@ Local synthetic development may precede identity; no public deployment or multi-
 
 ## Completion record
 
+5 November 2026 — Research result clarity/recovery: added USD metric cards, win-rate N/A for no trades, gold-specific selected-job labels and quantity headers, sizing rejection explanations, and request-key lookup after interrupted gold submission. Nineteen Python tests pass; syntax checks pass. Recovery tests model a lost response by retrieving/retrying the original key and checking exactly one stored job. Browser/network interruption interaction and EC2 deployment remain unverified.
+
 5 November 2026 — XAU/USD research increment: added bounded UTC bid-candle/spread CSV import, explicit user-declared ounce/lot contract and cost inputs, separate gold sizing, saved worker reports and dashboard import form. Seventeen Python tests pass, including existing EUR/USD regression and gold import/API/sizing cases; all three frontend scripts pass syntax checks. Synthetic gold sample generator added. Real historical data, broker specification qualification and browser interaction verification remain outstanding (browser automation timed out during verification). See GOLD-RESEARCH.md. No Rust/live gold support is enabled.
 
 Saved research history increment: added bounded history API and dashboard paging/reopen controls, with newest-run restoration on reload. Fourteen Python tests pass. The persistence-check CLI saved and matched a completed result across a local API/worker process restart using SQLite. EC2/PostgreSQL container-recreation verification remains owner-run using EC2-TEST.md; browser interaction testing of the new history controls is still pending.

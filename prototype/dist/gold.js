@@ -16,13 +16,26 @@
     form.querySelector('input[type=file]').onchange=async e=>{const file=e.target.files[0];if(!file)return;if(file.size>500000){message='File exceeds 500 KB';fileText='';}else{fileText=await file.text();message='Loaded '+file.name;}retryKey=null;form.querySelector('[role=status]').textContent=message;};
     form.onsubmit=async e=>{
       e.preventDefault();if(busy)return;busy=true;retryKey??=crypto.randomUUID();
+      const submittedKey=retryKey;
       form.querySelector('button').disabled=true;form.querySelector('[role=status]').textContent='Submitting XAU/USD research…';
       try{
         const body={csv_text:fileText,provenance:values.provenance,rights_confirmed:values.rights_confirmed===true,spec:Object.fromEntries(fields.map(([k])=>[k,values[k]]))};
         const response=await fetch('/api/v1/research/gold/jobs',{method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':retryKey},body:JSON.stringify(body),signal:AbortSignal.timeout(15000)});
         if(!response.ok)throw new Error('Gold import rejected (HTTP '+response.status+'). Check CSV and contract settings.');
         const job=await response.json();retryKey=null;message='Gold job submitted: '+job.id;busy=false;window.dispatchEvent(new CustomEvent('research:created',{detail:job}));
-      }catch(err){busy=false;message=err.message;form.querySelector('[role=status]').textContent=message;form.querySelector('button').disabled=false;}
+      }catch(err){
+        if(err.name==='TimeoutError' || err.name==='AbortError' || err instanceof TypeError){
+          message='Response interrupted. Checking whether your job was saved…';
+          form.querySelector('[role=status]').textContent=message;
+          try{
+            const recovered=await fetch('/api/v1/research/requests/'+submittedKey,{signal:AbortSignal.timeout(10000)});
+            if(recovered.ok){const job=await recovered.json();retryKey=null;busy=false;message='Recovered saved job: '+job.id;window.dispatchEvent(new CustomEvent('research:created',{detail:job}));return;}
+          }catch{/* Unknown outcome: preserve the original retry key. */}
+          message='Submission outcome is not confirmed. Retry unchanged settings to reuse the same request key; do not create a new submission.';
+        }else message=err.message;
+        busy=false;const current=document.querySelector('#gold-import form');
+        if(current){current.querySelector('[role=status]').textContent=message;current.querySelector('button').disabled=false;}
+      }
     };
   }
   window.addEventListener('research:drawn',mount);mount();

@@ -48,6 +48,12 @@ def health():
     except Exception: raise HTTPException(503, 'Research database unavailable')
     return {'status': 'ok', 'mode': 'local-synthetic-research'}
 
+@app.get('/api/v1/research/requests/{request_key}')
+def recover_request(request_key: UUID):
+    job=Store().get_by_request(str(request_key))
+    if job is None: raise HTTPException(404,'Submission not found yet; its outcome may still be unknown')
+    return job
+
 @app.post('/api/v1/research/jobs', status_code=202)
 def create_job(body: JobRequest, idempotency_key: UUID = Header()):
     try: return Store().create(str(idempotency_key), body.model_dump())

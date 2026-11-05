@@ -47,12 +47,27 @@
       b.disabled=pending;
       b.onclick=()=>openJob(b.dataset.jobId,true);
     });
+    if(job?.config?.symbol==='XAU_USD'){
+      const submissionPanel=root.querySelector('section.panel');
+      submissionPanel.querySelector('h2').textContent='Selected XAU/USD research job';
+      submissionPanel.querySelector('p').textContent='Gold session breakout · imported CSV · user-declared contract and costs.';
+      submissionPanel.querySelectorAll('p')[1].textContent='Use the gold import form above to submit another gold run. The button below starts the separate EUR/USD fixture.';
+      submissionPanel.querySelector('#run-research').textContent='Run EUR/USD synthetic fixture';
+    }
     if(result?.symbol==='XAU_USD'){
       const panel=root.querySelector('#selected-research-result');
       panel.querySelector('h2').textContent='XAU/USD imported-data replay';
       panel.querySelectorAll('tbody tr').forEach((row,i)=>row.children[2].textContent=result.trades[i].quantity_lots+' lots');
       const note=document.createElement('p');note.textContent=result.warning;panel.prepend(note);
-      const metrics=document.createElement('p');metrics.textContent=JSON.stringify(result.metrics);panel.prepend(metrics);
+      panel.querySelectorAll('th')[2].textContent='Quantity (lots)';
+      const metrics=document.createElement('div');metrics.className='stats';
+      const m=result.metrics||{};
+      const usd=value=>value===undefined?'—':new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(value));
+      const cards=[['Net result after costs',usd(m.net_usd)],['Closed-trade drawdown',usd(m.closed_trade_drawdown_usd)],['Commission (included in net)',usd(m.commission_usd)],['Trades / win rate',String(m.trade_count??result.trades.length)+' / '+(m.win_rate==null?'N/A':(Number(m.win_rate)*100).toFixed(1)+'%')]];
+      metrics.innerHTML=cards.map(([label,value])=>`<div class="stat"><div class="stat-label">${escape(label)}</div><div class="stat-value">${escape(value)}</div></div>`).join('');
+      panel.insertBefore(metrics,panel.querySelector('table').parentElement);
+      if(!result.trades.length){const empty=document.createElement('p');empty.className='notice';empty.textContent=result.no_trade_explanation || 'No trades were recorded. This older report has no rejection diagnostics; rerun to collect them.';panel.insertBefore(empty,metrics.nextSibling);}
+      if(Object.keys(result.sizing_rejections||{}).length){const diagnostics=document.createElement('p');diagnostics.textContent='Rejected sizing attempts (not unique signals): '+Object.entries(result.sizing_rejections).map(([k,v])=>k.replaceAll('_',' ')+': '+v).join('; ');panel.append(diagnostics);}
     }
     window.dispatchEvent(new Event('research:drawn'));
   }

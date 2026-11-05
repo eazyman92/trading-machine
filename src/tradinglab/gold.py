@@ -33,10 +33,15 @@ def run_gold(config):
     if any(not v.is_finite() or v<=0 for v in (tick,ounces,step,minimum,budget,cap)) or not commission.is_finite() or commission<0:
         raise ValueError('Invalid contract settings')
     if minimum % step != 0: raise ValueError('Minimum lots must be a multiple of lot step')
+    sizing_rejections={}
     def sizing(entry,stop):
         per_lot=(abs(entry-stop)+tick)*ounces+2*commission
         lots=(min(budget/per_lot,cap/(entry*ounces))/step).to_integral_value(rounding=ROUND_FLOOR)*step
-        return lots*ounces if lots>=minimum else D(0)
+        if lots<minimum:
+            reason='notional_cap_below_minimum' if cap<entry*ounces*minimum else 'risk_budget_below_minimum'
+            sizing_rejections[reason]=sizing_rejections.get(reason,0)+1
+            return D(0)
+        return lots*ounces
     result=replay(bars,tick=tick,fee=commission/ounces,sizing=sizing)
     result['data_kind']='user_supplied_unverified'
     equity=D(0);peak=D(0);drawdown=D(0);wins=0;fees=D(0)
@@ -48,6 +53,11 @@ def run_gold(config):
         fees+=2*commission*quantity/ounces
         wins+=pnl>0
     n=len(result['trades'])
+    result['sizing_rejections']=sizing_rejections
+    result['no_trade_explanation']=None if n else (
+        'Minimum trade size exceeded the notional cap or estimated risk budget; inspect sizing rejections.' if sizing_rejections else
+        'All sessions were excluded because data was incomplete or the session was closed.' if result['rejected_sessions'] else
+        'No eligible breakout entry was found under the configured rules.')
     result.update(symbol='XAU_USD',strategy_version='gold-session-breakout-v0.1',bar_count=len(bars),
                   dataset_sha256=hashlib.sha256(config['csv_text'].encode()).hexdigest(),
                   provenance=config['provenance'],contract_spec=spec,

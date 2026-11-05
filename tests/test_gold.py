@@ -46,3 +46,30 @@ def test_gold_api_worker(tmp_path,monkeypatch):
         assert job['status']=='completed' and job['result']['symbol']=='XAU_USD'
         bad=config();bad['rights_confirmed']=False
         assert client.post('/api/v1/research/gold/jobs',json=bad,headers=headers).status_code==422
+
+def test_gold_no_trade_diagnostics():
+    small=config();small['spec']['notional_cap_usd']='1000'
+    result=run_gold(small)
+    assert not result['trades']
+    assert result['sizing_rejections']['notional_cap_below_minimum']>0
+    assert 'Minimum trade size' in result['no_trade_explanation']
+    small=config();small['spec']['risk_budget_usd']='0.01'
+    assert run_gold(small)['sizing_rejections']['risk_budget_below_minimum']>0
+
+def test_submission_recovery_without_duplicate(tmp_path,monkeypatch):
+    monkeypatch.setenv('DATABASE_URL','sqlite:///'+str(tmp_path/'recover.db'))
+    store=Store();store.migrate()
+    key=str(uuid.uuid4())
+    with TestClient(app) as client:
+        route='/api/v1/research/requests/'+key
+        assert client.get(route).status_code==404
+        first=client.post('/api/v1/research/gold/jobs',json=config(),headers={'Idempotency-Key':key})
+        assert first.status_code==202
+        # Model a lost POST response: recover using only its original request key.
+        recovered=client.get(route)
+        assert recovered.status_code==200 and recovered.json()['id']==first.json()['id']
+        retried=client.post('/api/v1/research/gold/jobs',json=config(),headers={'Idempotency-Key':key})
+        assert retried.json()['id']==first.json()['id']
+        assert len(store.list_jobs()['items'])==1
+        changed=config();changed['spec']['risk_budget_usd']='30'
+        assert client.post('/api/v1/research/gold/jobs',json=changed,headers={'Idempotency-Key':key}).status_code==409

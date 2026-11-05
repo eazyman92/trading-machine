@@ -69,6 +69,11 @@ class Store:
             row = self.sql(conn, 'SELECT * FROM research_jobs WHERE id=?', (job_id,)).fetchone()
             return self.decode(row) if row else None
 
+    def get_by_request(self, key):
+        with self.connection() as conn:
+            row=self.sql(conn,'SELECT * FROM research_jobs WHERE request_key=?',(key,)).fetchone()
+            return self.decode(row) if row else None
+
     def list_jobs(self, limit=20, offset=0):
         with self.connection() as conn:
             rows = self.sql(conn, 'SELECT id,status,config,error,created_at,updated_at FROM research_jobs ORDER BY created_at DESC,id DESC LIMIT ? OFFSET ?', (limit+1, offset)).fetchall()
