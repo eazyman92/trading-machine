@@ -82,6 +82,13 @@ def test_dataset_preview_api():
         body['end_date']='2026-03-26'
         assert client.post('/api/v1/research/gold/validate',json=body).status_code==422
 
+def test_job_rejection_explains_empty_selected_period():
+    body=config()|{'start_date':'2027-01-01','end_date':'2027-01-02'}
+    with TestClient(app) as client:
+        response=client.post('/api/v1/research/gold/jobs',json=body,headers={'Idempotency-Key':str(uuid.uuid4())})
+        assert response.status_code==422
+        assert 'No candles in selected London date range' in response.json()['detail']
+
 def test_gold_api_worker(tmp_path,monkeypatch):
     monkeypatch.setenv('DATABASE_URL','sqlite:///'+str(tmp_path/'gold.db'))
     store=Store();store.migrate()

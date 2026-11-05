@@ -119,7 +119,8 @@ def create_gold(body: GoldRequest,idempotency_key: UUID=Header()):
     try:
         prepare_dataset(body.csv_text,body.start_date,body.end_date)
         if body.spec.minimum_lots % body.spec.lot_step != 0: raise ValueError('Minimum lots must be a multiple of lot step')
-    except (ValueError,ArithmeticError,TypeError,KeyError): raise HTTPException(422,'Invalid CSV or contract settings; check UTC timestamps, finite positive OHLC/spread, ordering and row limit')
+    except ValueError as exc:raise HTTPException(422,'Invalid gold research input: '+str(exc))
+    except (ArithmeticError,TypeError,KeyError):raise HTTPException(422,'Invalid CSV decimal values or contract settings; check finite prices, required columns and lot increment')
     config=body.model_dump(mode='json') | {'symbol':'XAU_USD','strategy':'gold-session-breakout-v0.1','dataset':'user-csv-v1'}
     try:return Store().create(str(idempotency_key),config)
     except Conflict as exc:raise HTTPException(409,str(exc))

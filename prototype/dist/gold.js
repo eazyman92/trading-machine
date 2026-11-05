@@ -83,7 +83,11 @@
         body.rules={buffer_ticks:Number(values.buffer_ticks??5),reward_multiple:values.reward_multiple||'2',max_spread_usd:values.max_spread_usd||null};
         if(datasetId){body.dataset_id=datasetId;delete body.csv_text;delete body.provenance;delete body.rights_confirmed;}
         const response=await fetch('/api/v1/research/gold/'+(datasetId?'stored-jobs':'jobs'),{method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':retryKey},body:JSON.stringify(body),signal:AbortSignal.timeout(120000)});
-        if(!response.ok)throw new Error('Gold import rejected (HTTP '+response.status+'). Check CSV and contract settings.');
+        if(!response.ok){
+          let reason='Check CSV, selected dates and contract settings.';
+          try{const rejected=await response.json();if(typeof rejected.detail==='string')reason=rejected.detail;else if(Array.isArray(rejected.detail))reason=rejected.detail.map(d=>d.loc.filter(x=>x!=='body').join('.')+': '+d.msg).join('; ');}catch{/* Non-JSON proxy response. */}
+          throw new Error('Gold import rejected (HTTP '+response.status+'): '+reason);
+        }
         const job=await response.json();retryKey=null;message='Gold job submitted: '+job.id;busy=false;window.dispatchEvent(new CustomEvent('research:created',{detail:job}));
       }catch(err){
         if(err.name==='TimeoutError' || err.name==='AbortError' || err instanceof TypeError){
