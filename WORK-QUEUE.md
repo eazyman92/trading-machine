@@ -44,6 +44,8 @@ Local synthetic development may precede identity; no public deployment or multi-
 
 ## Completion record
 
+5 November 2026 — Real-data preparation increment: reviewed official Dukascopy historical export/docs as a qualification candidate (no commercial rights established). Added strict normalized UTC bid/ask tick-to-candle preparation with source/output hashes and gap statistics, no silent filling, and explicit first-observed-spread approximation. Real data remains unverified and must be owner-supplied with permission; no dataset downloaded or bundled. Existing 3000-row bound remains. See REAL-DATA.md.
+
 5 November 2026 — Strategy-engine research increment: gold v0.2 adds configurable breakout buffer, reward multiple and maximum-entry-spread filter, deterministic configuration fingerprint, research-only status and rule-derived per-trade entry/risk evidence. Saved comparisons disclose rule changes. Twenty-three Python tests pass and frontend syntax checks pass. No historical-data qualification, LLM, broker submission or live approval added. Interactive browser verification remains pending.
 
 5 November 2026 — Dataset preview/research charts increment: added strict CSV preview with row/coverage/spread/session completeness, optional inclusive London session date range, stored closed-trade P&L/drawdown series and dashboard charts, and descriptive saved-run comparison enforcing exact CSV/date-range match and exposing changed settings. Twenty-two Python tests pass; JS syntax checks pass. No qualified market dataset or large-history storage added; existing 3,000-row/500 KB bound and unverified data status remain. Browser/EC2 interaction checks are pending.
