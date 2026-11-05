@@ -36,7 +36,8 @@ def size(entry, stop, budget=D("25")):
     return max(0, min(10000, int((budget / per_unit).to_integral_value(rounding=ROUND_FLOOR)),
                       int((D("10000") / entry).to_integral_value(rounding=ROUND_FLOOR))))
 
-def replay(bars):
+def replay(bars, tick=TICK, fee=FEE, sizing=size):
+    TICK, FEE = tick, fee
     if any(a.time >= b.time for a, b in zip(bars, bars[1:])):
         raise ValueError("timestamps must be strictly increasing; duplicates rejected")
     groups = {}
@@ -65,8 +66,8 @@ def replay(bars):
                     stop = low if side == 1 else high
                     if side * (entry-stop) <= 0:
                         continue
-                    units = size(entry, stop)
-                    if units < 1:
+                    units = sizing(entry, stop)
+                    if units <= 0:
                         continue
                     position = (side, entry, stop, entry + side*2*abs(entry-stop), units, bar.time, previous.time+timedelta(minutes=1))
             if position is None:

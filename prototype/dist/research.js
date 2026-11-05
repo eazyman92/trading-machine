@@ -47,6 +47,14 @@
       b.disabled=pending;
       b.onclick=()=>openJob(b.dataset.jobId,true);
     });
+    if(result?.symbol==='XAU_USD'){
+      const panel=root.querySelector('#selected-research-result');
+      panel.querySelector('h2').textContent='XAU/USD imported-data replay';
+      panel.querySelectorAll('tbody tr').forEach((row,i)=>row.children[2].textContent=result.trades[i].quantity_lots+' lots');
+      const note=document.createElement('p');note.textContent=result.warning;panel.prepend(note);
+      const metrics=document.createElement('p');metrics.textContent=JSON.stringify(result.metrics);panel.prepend(metrics);
+    }
+    window.dispatchEvent(new Event('research:drawn'));
   }
   async function api(path, options) {
     const response = await fetch('/api/v1/research/jobs'+path, {...options, signal: AbortSignal.timeout(10000)});
@@ -96,5 +104,6 @@
     draw();schedule();
   }
   window.addEventListener('research:mount',()=>{draw();schedule();loadHistory(true);});
+  window.addEventListener('research:created',e=>{job=e.detail;error='';draw();schedule();loadHistory(false);});
   if(location.hash==='#research') {draw();schedule();loadHistory(true);}
 })();

@@ -29,5 +29,6 @@ Run that SSH command on your own computer, substituting your key, instance user 
 - [Work queue](WORK-QUEUE.md): next tasks and known blockers.
 - [Architecture](SYSTEM-BLUEPRINT.md): responsibilities and build/reuse decisions.
 - [Engineering requirements](ENGINEERING-REQUIREMENTS.md): execution, data and account controls.
+- [Gold research import](GOLD-RESEARCH.md): XAU/USD CSV format, contract assumptions, test sample and deployment steps.
 
 Generated output, local dependencies, environment files and downloaded third-party research source snapshots are excluded from Git. Research notes and the source manifest remain included. No project-wide open-source license has been selected; third-party components retain their own licenses.

@@ -44,6 +44,8 @@ Local synthetic development may precede identity; no public deployment or multi-
 
 ## Completion record
 
+5 November 2026 — XAU/USD research increment: added bounded UTC bid-candle/spread CSV import, explicit user-declared ounce/lot contract and cost inputs, separate gold sizing, saved worker reports and dashboard import form. Seventeen Python tests pass, including existing EUR/USD regression and gold import/API/sizing cases; all three frontend scripts pass syntax checks. Synthetic gold sample generator added. Real historical data, broker specification qualification and browser interaction verification remain outstanding (browser automation timed out during verification). See GOLD-RESEARCH.md. No Rust/live gold support is enabled.
+
 Saved research history increment: added bounded history API and dashboard paging/reopen controls, with newest-run restoration on reload. Fourteen Python tests pass. The persistence-check CLI saved and matched a completed result across a local API/worker process restart using SQLite. EC2/PostgreSQL container-recreation verification remains owner-run using EC2-TEST.md; browser interaction testing of the new history controls is still pending.
 
 4 November 2026 — F04 partial: added GitHub Actions jobs for Python regression tests, Rust shared vectors and a Compose/PostgreSQL HTTP smoke test; added scripts/smoke_research.py and Git Bash/EC2 instructions in EC2-TEST.md. Local regression remains 13 passing tests. Workflow YAML parses, but GitHub execution, container builds and Rust compilation are still pending; no repository remote exists yet.

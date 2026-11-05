@@ -13,7 +13,7 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install -r requirements-dev.txt
       - run: python -m pytest -q
-      - run: node --check prototype/dist/app.js && node --check prototype/dist/research.js
+      - run: node --check prototype/dist/app.js && node --check prototype/dist/research.js && node --check prototype/dist/gold.js
   rust:
     runs-on: ubuntu-latest
     timeout-minutes: 10

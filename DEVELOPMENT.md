@@ -53,6 +53,8 @@ The schema is available at `/api/v1/openapi.json` and interactive documentation 
 
 Only `synthetic-london-dst-v1`, `session-breakout-v0.1` and `EUR_USD` are accepted. Extra fields are rejected. Terminal states are completed, failed and cancelled. A claimed job has a 60-second lease; another worker poll marks an expired run failed. This bounded fixture finishes well inside that lease. Longer research needs heartbeat/lease ownership and workload isolation before support is enabled.
 
+Gold import uses the separate `POST /api/v1/research/gold/jobs` endpoint, with a UUID idempotency key, CSV text, provenance, rights confirmation and explicit gold contract settings. Its bounded reports share the same history/status endpoints. See GOLD-RESEARCH.md for supported assumptions and limits. Verification updated 5 November: 17 Python tests pass locally; interactive browser verification of the new gold form is pending.
+
 ## Before production or Kubernetes
 
 This Compose file is for development: reload and source mounts are intentional. It is not a production deployment. Add identity/account authorization, access controls, job quotas, request limits, migration version tracking, complete dependency locking/image digests, dependency vulnerability checks, production image delivery, encrypted secret injection, backups/restoration, monitoring and PostgreSQL integration/soak checks. The bootstrap PostgreSQL role is not the final least-privilege application role. Public hosting must wait for those controls.

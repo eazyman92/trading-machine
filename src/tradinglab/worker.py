@@ -11,6 +11,10 @@ def process_one(store):
     if job is None: return False
     try:
         config = job['config']
+        if config.get('symbol')=='XAU_USD':
+            from tradinglab.gold import run_gold
+            store.finish(job['id'],result=run_gold(config))
+            return True
         if config != {'dataset': 'synthetic-london-dst-v1', 'strategy': 'session-breakout-v0.1', 'symbol': 'EUR_USD'}:
             raise ValueError('unsupported_configuration')
         bars = fixture()
